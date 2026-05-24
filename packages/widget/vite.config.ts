@@ -1,0 +1,39 @@
+import path from "path";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+
+/**
+ * Build target for the embeddable Voqi widget.
+ *
+ * Output: ``dist/voqi-widget.js`` — a single IIFE with React + the
+ * runtime + UI inlined, so it can be dropped on any third-party site
+ * via a ``<script>`` tag without imposing peer-dependency requirements.
+ *
+ * The host page sees one global, ``window.Voqi``. The widget renders
+ * inside a Shadow DOM so host CSS can't bleed into the chrome.
+ *
+ * Run with: ``npm run build`` (or ``npm run dev`` to rebuild on save).
+ */
+export default defineConfig({
+    plugins: [react()],
+    define: {
+        "process.env.NODE_ENV": JSON.stringify("production"),
+    },
+    build: {
+        outDir: "dist",
+        emptyOutDir: true,
+        sourcemap: true,
+        cssCodeSplit: false,
+        lib: {
+            entry: path.resolve(__dirname, "./src/index.tsx"),
+            name: "Voqi",
+            formats: ["iife"],
+            fileName: () => "voqi-widget.js",
+        },
+        rollupOptions: {
+            output: {
+                inlineDynamicImports: true,
+            },
+        },
+    },
+});

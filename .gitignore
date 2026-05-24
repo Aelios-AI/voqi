@@ -1,0 +1,28 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.python-version
+
+# Env files — never commit secrets
+.env
+.env.*
+!.env.example
+
+# Editor
+.vscode/
+.idea/
+
+# Build artefacts
+*.tsbuildinfo
+packages/widget/public/
+examples/tracker/public/voqi-widget.js
+
+# Logs
+packages/agent-server/logs/

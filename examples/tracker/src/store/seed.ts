@@ -1,0 +1,253 @@
+import type { Label, Member, Sprint, Task } from "./types";
+
+const NOW = Date.now();
+const DAY = 24 * 60 * 60 * 1000;
+
+export const SEED_MEMBERS: Member[] = [
+    { id: "m_amelia", name: "Amelia Voss",   role: "Engineering Lead",  email: "amelia@example.com", capacityHours: 32, color: "#a3b8e0" },
+    { id: "m_jonas",  name: "Jonas Reiter",  role: "Senior Engineer",   email: "jonas@example.com",  capacityHours: 32, color: "#d8c3a3" },
+    { id: "m_priya",  name: "Priya Khanna",  role: "Product Designer",  email: "priya@example.com",  capacityHours: 28, color: "#c5a3d8" },
+    { id: "m_yuki",   name: "Yuki Tanaka",   role: "Backend Engineer",  email: "yuki@example.com",   capacityHours: 32, color: "#a3d8c5" },
+    { id: "m_marcus", name: "Marcus Hale",   role: "Product Manager",   email: "marcus@example.com", capacityHours: 24, color: "#d8a3a3" },
+    { id: "m_sera",   name: "Sera Dunn",     role: "QA Engineer",       email: "sera@example.com",   capacityHours: 32, color: "#a3c5d8" },
+];
+
+export const SEED_LABELS: Label[] = [
+    { id: "l_bug",       name: "bug",          color: "#c2554a" },
+    { id: "l_feature",   name: "feature",      color: "#5b7cb7" },
+    { id: "l_polish",    name: "polish",       color: "#a3b8e0" },
+    { id: "l_perf",      name: "performance",  color: "#d8c3a3" },
+    { id: "l_research",  name: "research",     color: "#c5a3d8" },
+    { id: "l_infra",     name: "infra",        color: "#8a8a93" },
+    { id: "l_docs",      name: "docs",         color: "#a3d8c5" },
+    { id: "l_security",  name: "security",     color: "#b8924c" },
+];
+
+export const SEED_SPRINTS: Sprint[] = [
+    {
+        id: "sp_1",
+        name: "Sprint 23 — Onboarding Polish",
+        goal: "Tighten the first-run experience and ship the new project picker.",
+        status: "active",
+        startDate: NOW - 8 * DAY,
+        endDate: NOW + 6 * DAY,
+    },
+    {
+        id: "sp_2",
+        name: "Sprint 24 — Workspace Search",
+        goal: "Ship semantic search across tasks, comments, and docs.",
+        status: "planned",
+        startDate: NOW + 7 * DAY,
+        endDate: NOW + 21 * DAY,
+    },
+    {
+        id: "sp_3",
+        name: "Sprint 22 — Stability",
+        goal: "Crush the long tail of P1 bugs from the GA launch.",
+        status: "completed",
+        startDate: NOW - 22 * DAY,
+        endDate: NOW - 9 * DAY,
+    },
+];
+
+let _seq = 240;
+const code = () => `EX-${++_seq}`;
+
+const T = (
+    title: string,
+    extras: Partial<Omit<Task, "id" | "code" | "title" | "createdAt" | "updatedAt">> = {},
+): Task => {
+    const id = `t_${Math.random().toString(36).slice(2, 9)}`;
+    return {
+        id,
+        code: code(),
+        title,
+        description: extras.description ?? "",
+        status: extras.status ?? "backlog",
+        priority: extras.priority ?? "medium",
+        assigneeId: extras.assigneeId ?? null,
+        labelIds: extras.labelIds ?? [],
+        sprintId: extras.sprintId ?? null,
+        dueDate: extras.dueDate ?? null,
+        estimateHours: extras.estimateHours ?? null,
+        createdAt: NOW - Math.floor(Math.random() * 14 * DAY),
+        updatedAt: NOW - Math.floor(Math.random() * 3 * DAY),
+    };
+};
+
+export const SEED_TASKS: Task[] = [
+    T("Polish project picker hover state", {
+        status: "in_progress",
+        priority: "medium",
+        assigneeId: "m_priya",
+        labelIds: ["l_polish"],
+        sprintId: "sp_1",
+        dueDate: NOW + 3 * DAY,
+        estimateHours: 4,
+        description: "Hover transitions feel abrupt; align with the rest of the workspace shell.",
+    }),
+    T("Onboarding tour skips empty state", {
+        status: "backlog",
+        priority: "high",
+        assigneeId: "m_amelia",
+        labelIds: ["l_bug", "l_polish"],
+        sprintId: "sp_1",
+        dueDate: NOW + 5 * DAY,
+        estimateHours: 6,
+        description: "If the workspace has zero tasks, the tour skips step 3 entirely. Trace the conditional in OnboardingTour.",
+    }),
+    T("Add bulk-edit shortcut from list view", {
+        status: "review",
+        priority: "high",
+        assigneeId: "m_jonas",
+        labelIds: ["l_feature"],
+        sprintId: "sp_1",
+        dueDate: NOW + 2 * DAY,
+        estimateHours: 12,
+    }),
+    T("Sprint burndown chart caches stale data", {
+        status: "in_progress",
+        priority: "urgent",
+        assigneeId: "m_yuki",
+        labelIds: ["l_bug", "l_perf"],
+        sprintId: "sp_1",
+        dueDate: NOW + 1 * DAY,
+        estimateHours: 8,
+        description: "Burndown shows yesterday's numbers until you hard-refresh. Likely the SWR key.",
+    }),
+    T("Migrate avatars to signed S3 urls", {
+        status: "backlog",
+        priority: "medium",
+        assigneeId: "m_yuki",
+        labelIds: ["l_infra", "l_security"],
+        sprintId: null,
+        dueDate: NOW + 12 * DAY,
+        estimateHours: 16,
+    }),
+    T("Doc: how labels propagate from parent task", {
+        status: "backlog",
+        priority: "low",
+        assigneeId: null,
+        labelIds: ["l_docs"],
+        sprintId: null,
+        estimateHours: 2,
+    }),
+    T("Search: fuzzy-match task codes (EX-123)", {
+        status: "backlog",
+        priority: "high",
+        assigneeId: "m_jonas",
+        labelIds: ["l_feature"],
+        sprintId: "sp_2",
+        estimateHours: 8,
+    }),
+    T("Search: index comment bodies", {
+        status: "backlog",
+        priority: "medium",
+        assigneeId: "m_amelia",
+        labelIds: ["l_feature", "l_research"],
+        sprintId: "sp_2",
+        estimateHours: 16,
+    }),
+    T("Search: cap result snippets at 240 chars", {
+        status: "backlog",
+        priority: "low",
+        assigneeId: null,
+        labelIds: ["l_polish"],
+        sprintId: "sp_2",
+        estimateHours: 3,
+    }),
+    T("Investigate Sentry spike on /api/sprints", {
+        status: "in_progress",
+        priority: "urgent",
+        assigneeId: "m_amelia",
+        labelIds: ["l_bug", "l_perf"],
+        sprintId: "sp_1",
+        dueDate: NOW,
+        estimateHours: 6,
+        description: "Spike started 14:00 UTC yesterday — coincides with the Tier-2 customer rollout.",
+    }),
+    T("Empty state illustration for boards", {
+        status: "review",
+        priority: "low",
+        assigneeId: "m_priya",
+        labelIds: ["l_polish"],
+        sprintId: "sp_1",
+        estimateHours: 4,
+    }),
+    T("Keyboard shortcut: ⌘K command palette", {
+        status: "done",
+        priority: "high",
+        assigneeId: "m_jonas",
+        labelIds: ["l_feature"],
+        sprintId: "sp_1",
+        estimateHours: 10,
+    }),
+    T("Fix flaky test: TaskDrawer.spec", {
+        status: "done",
+        priority: "medium",
+        assigneeId: "m_sera",
+        labelIds: ["l_bug"],
+        sprintId: "sp_1",
+        estimateHours: 3,
+    }),
+    T("Audit: GDPR consent banner copy", {
+        status: "backlog",
+        priority: "medium",
+        assigneeId: "m_marcus",
+        labelIds: ["l_security", "l_docs"],
+        sprintId: null,
+        estimateHours: 5,
+    }),
+    T("Reduce bundle size: lazy-load chart lib", {
+        status: "backlog",
+        priority: "medium",
+        assigneeId: "m_yuki",
+        labelIds: ["l_perf"],
+        sprintId: null,
+        estimateHours: 6,
+    }),
+    T("Add label colour picker to settings", {
+        status: "in_progress",
+        priority: "medium",
+        assigneeId: "m_priya",
+        labelIds: ["l_feature"],
+        sprintId: "sp_1",
+        dueDate: NOW + 4 * DAY,
+        estimateHours: 5,
+    }),
+    T("OAuth: GitHub login regressed on Safari", {
+        status: "review",
+        priority: "urgent",
+        assigneeId: "m_amelia",
+        labelIds: ["l_bug", "l_security"],
+        sprintId: "sp_1",
+        dueDate: NOW + 1 * DAY,
+        estimateHours: 4,
+    }),
+    T("Q3 roadmap: customer interview synthesis", {
+        status: "in_progress",
+        priority: "high",
+        assigneeId: "m_marcus",
+        labelIds: ["l_research"],
+        sprintId: null,
+        dueDate: NOW + 6 * DAY,
+        estimateHours: 10,
+    }),
+    T("Refactor: collapse 4 useEffects in TaskRow", {
+        status: "backlog",
+        priority: "low",
+        assigneeId: "m_jonas",
+        labelIds: ["l_polish"],
+        sprintId: null,
+        estimateHours: 3,
+    }),
+    T("Triage QA report from 2026-04-29", {
+        status: "review",
+        priority: "high",
+        assigneeId: "m_sera",
+        labelIds: ["l_bug"],
+        sprintId: "sp_1",
+        dueDate: NOW,
+        estimateHours: 4,
+    }),
+];

@@ -1,0 +1,207 @@
+# Voqi agent configuration
+# ─────────────────────────
+# Edit this file to teach the agent what your software is, how it should
+# behave, and what knowledge it has access to. The widget supplies the
+# tool list and the visitor's language/mode choice at session start —
+# everything else lives here.
+
+agent:
+  # Persona shown to the LLM. The agent will introduce itself this way.
+  # NOTE: every bundled Cartesia voice is FEMALE — pick a feminine name
+  # here so the spoken voice matches the persona. If you want a
+  # different-gender voice, override per-language via the agent
+  # profile's ``voice_languages`` or replace entries in
+  # adapters/languages.py::CARTESIA_TTS_VOICES.
+  name: "Julie"
+  # One sentence of personality. Drives tone, not behavior. Leave blank to skip.
+  personality:
+
+software:
+  # The product the agent operates inside. Used in the system prompt so
+  # the agent knows what it's controlling.
+  name: "Example Tracker"
+  # 1-2 sentence summary, used when there's no full knowledge base.
+  # Leave blank to skip.
+  tldr:
+  # Path to a markdown knowledge base. Relative paths resolve against
+  # this YAML file's directory. Leave blank to skip.
+  docs_file:
+  # Or paste the knowledge base inline here as a multi-line block. If
+  # both docs_file and docs are set, docs_file wins.
+  docs: |
+    # Example Tracker — Product Knowledge Base
+
+    ## What Example Tracker is
+
+    Example Tracker is a sample project workspace for software teams —
+    tasks, sprints, people, labels, comments. It's a demo target for the
+    Aelios in-app widget, not an Aelios product offering; every name,
+    task, and email address is fictional.
+
+    Frontend-only (no backend in this build); state lives in memory while
+    the tab is open, and a hard reload re-seeds from the fixture data so
+    each demo run starts from a clean slate. Demo workspace is "Acme".
+
+    The agent embedded in Example Tracker can both *talk about* the
+    workspace (answer questions about the data) and *take actions* on it
+    (via the 28 tools listed in the tool manifest).
+
+    ---
+
+    ## Core entities
+
+    ### Task
+    The atomic unit of work. Every task carries:
+    - **id** — internal unique id (e.g. `t_abc1234`)
+    - **code** — public reference (e.g. `EX-247`). Always uppercase,
+      always prefixed `EX-`. Use the code in conversation; use either
+      id or code when calling tools.
+    - **title** — short action-oriented sentence
+    - **description** — optional longer context
+    - **status** — one of `backlog`, `in_progress`, `review`, `done`
+    - **priority** — one of `urgent`, `high`, `medium`, `low`
+    - **assigneeId** — single member or null (unassigned)
+    - **labelIds** — zero or more labels
+    - **sprintId** — one sprint or null (no sprint)
+    - **dueDate** — optional ISO timestamp
+    - **estimateHours** — optional integer hours
+    - **createdAt / updatedAt** — set automatically
+    - **comments** — separate entity, attached by `taskId`
+
+    ### Sprint
+    An iteration cycle — typically 2 weeks. Carries:
+    - **name** — convention is `Sprint NN — Theme` (e.g. "Sprint 24 —
+      Workspace Search")
+    - **goal** — one-sentence "why we're doing this sprint"
+    - **status** — `planned` → `active` → `completed`
+    - **startDate / endDate**
+    - **taskIds** — many-to-one through `task.sprintId`
+
+    There is exactly one **active** sprint at a time, conventionally.
+    Multiple `planned` and many `completed` sprints can coexist. When
+    the user says "this sprint" without qualification, they mean the
+    active one.
+
+    ### Member
+    A person in the workspace. Carries:
+    - **name, role, email, color**
+    - **capacityHours** — weekly capacity (defaults to 32)
+    - **id** (e.g. `m_amelia`)
+
+    ### Label
+    Lightweight tag. Carries `name` + `color` (hex). Default labels in
+    the seed: `bug`, `feature`, `polish`, `performance`, `research`,
+    `infra`, `docs`, `security`. New labels can be created on demand.
+
+    ### Comment
+    Free-text note attached to a task. Carries `authorId`, `body`,
+    `createdAt`.
+
+    ### Activity item
+    Audit row, generated automatically when tasks/sprints/comments
+    change. Visible on the Dashboard and Inbox. Not directly editable.
+
+    ---
+
+    ## Status semantics (the four-column board)
+
+    | Status | Meaning |
+    | --- | --- |
+    | `backlog` | Not started. Triaged but no one's actively working it. |
+    | `in_progress` | Someone's working on it right now. |
+    | `review` | Code/work is done but waiting on review or QA. |
+    | `done` | Shipped/closed. Counts toward sprint completion. |
+
+    When the user says "I finished X" → move to `done` if review isn't
+    needed, or `review` if it is. Default to `done` if ambiguous and the
+    user just says "done".
+
+    When they say "I'm starting X" → move to `in_progress`.
+
+    ---
+
+    ## Priority semantics
+
+    | Priority | When to use |
+    | --- | --- |
+    | `urgent` | Production-affecting, customer-blocking, or sprint-blocking. |
+    | `high` | Important this sprint, but not urgent today. |
+    | `medium` | Default. Should be done eventually. |
+    | `low` | Nice-to-have, not pressing. |
+
+    The agent should not silently change priority — only when the user
+    asks ("mark these as urgent"). If creating a task and the user
+    hasn't said priority, default to `medium`.
+
+    ---
+
+    ## Reference resolution (how to refer to things)
+
+    The tool layer accepts flexible refs and resolves them server-side.
+    You can — and the agent should — pass the most natural form:
+
+    - **Task**: id (`t_xyz123`), or code (`EX-247`), or partial title match
+    - **Member**: id (`m_amelia`), full name, first name only, or email
+      prefix
+    - **Sprint**: id (`sp_1`), or any name fragment ("search" matches
+      "Sprint 24 — Workspace Search")
+    - **Label**: id (`l_bug`) or name (`bug`)
+
+    If a ref is ambiguous (e.g. multiple members with the same first
+    name), prefer asking the user to clarify rather than guessing.
+
+    ---
+
+# Extra instructions appended to the agent's system prompt. Use this to
+# add business rules ("never delete tasks with unresolved comments"),
+# stylistic preferences, or constraints the agent should always honour.
+# This is NOT the full system prompt — Voqi builds that itself from
+# persona + software docs + tools. This block is concatenated in.
+# Leave blank to skip.
+additional_instructions:
+
+# NOTE: language and mode are NOT configured here. The visitor picks
+# the language and mode at session start in the widget; their choice is
+# the only source of truth.
+
+# STT bias phrases. Product names, technical jargon, or industry
+# terms the speech-to-text engine should be primed to recognise.
+speech_keywords: []
+
+# End-of-turn detection.
+#   false — VAD-only. Pipecat triggers a turn-end after a short silence
+#           window. Fast, free, no extra dependencies.
+#   true  — runs Pipecat's local SmartTurn audio analyzer for more
+#           natural pauses and better mid-utterance hesitation handling.
+#           Auto-falls-back to VAD-only for Bulgarian, Croatian, Czech,
+#           Greek, Gujarati, Hebrew, Hungarian, Kannada, Malay, Romanian,
+#           Slovak, Swedish, Tagalog, Tamil, Telugu, and Thai — SmartTurn
+#           has no model for those languages.
+#
+# To plug in a different STT/TTS provider entirely (Whisper, ElevenLabs,
+# Riva, etc.), edit bot.py — the STT and TTS factory lines are clearly
+# marked. Pipecat ships drop-in adapters for the major providers:
+# https://docs.pipecat.ai/
+turn_detection: true
+
+# Per-demonstration ceiling on dispatched tool batches. Acts as a
+# runaway-loop guardrail: if the LLM tries to dispatch a batch that
+# would push the demo over this number, the processor force-ends the
+# demonstration with a canned "I've hit the limit for one
+# demonstration" apology. Built-in default is 8 — raise for apps
+# that legitimately need long multi-step demos; lower for high-
+# traffic deployments to cap LLM cost per demo.
+max_tool_batches_per_demonstration: 8
+
+# Seconds the processor waits for every tool in a dispatched batch
+# to report back before force-resolving the batch as a timeout (the
+# in-flight calls that never reported land as `error: "timeout"` on
+# the next `tool_batch_completed` round). Built-in default is 60.0
+# — raise if your tools legitimately need longer (e.g. long-running
+# server calls); lower for snappier UX when all tools are fast.
+batch_timeout_seconds: 60.0
+
+# OpenAI model id for the main inference round. Built-in default is
+# whatever is set in `OPENAI_MODEL` in processor.py. Override here to
+# pin a specific snapshot or swap models per deployment.
+llm_model: "gpt-5.4"

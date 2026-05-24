@@ -1,0 +1,1322 @@
+# Per-scenario judge rubrics for Layer 3 real-LLM tests.
+#
+# Each entry describes:
+#   name            — test scenario id
+#   tools           — list of tools the harness should register
+#                       (name, description, requires_confirmation)
+#   software_docs   — optional knowledge base text
+#   software_tldr   — optional fallback summary
+#   software_name   — optional brand
+#   ai_profile      — optional AI persona dict
+#   output_language — visitor language (default English)
+#   language_code   — ISO code (default en)
+#   turns           — sequence of {kind: kickoff | user | text_message | tool_result | wait_idle,
+#                                    text?: str, call_id?: str, result?: any, error?: str}
+#                     `tool_result` requires `last_call_name` to pick which dispatched call_id
+#                     to resolve.
+#   rubric          — natural-language description of what the judge should grade
+
+scenarios:
+
+  - name: hello_world_greeting
+    rubric: |
+      The agent received a kickoff frame with no tools registered. It should
+      have greeted briefly (one or two sentences) without calling any tools
+      (none exist). user_turn_status should not appear (kickoff is not a user
+      voice turn). PASS if greeting is concise and no tool_invocations were emitted.
+    tools: []
+    turns:
+      - {kind: kickoff}
+
+  - name: simple_one_batch_demo
+    rubric: |
+      User asked to create a task called "Ship the release". The agent
+      should have set demonstration_action='start_new' with a sensible
+      demonstration_name, and emitted exactly one tool_call to
+      `create_task` with an argument whose value is "Ship the release"
+      (the LLM picks whichever key it considers natural — `title`,
+      `name`, `body`, `description`, etc. — only the value matters here).
+      PASS if start_new + correct tool + an arg with the right value.
+    tools:
+      - {name: create_task, description: "Create a task", requires_confirmation: false}
+      - {name: list_tasks, description: "List tasks", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Create a task called Ship the release please."}
+
+  - name: multi_step_demo_split_across_batches
+    rubric: |
+      User asks to "log in and then create a task". The agent must respect
+      the parallel-batch rule: split into TWO turns. Turn 1 should dispatch
+      ONLY log_in (start_new). After tool_result, the next turn should
+      dispatch create_task under the same demonstration. PASS if:
+        - First batch contains ONLY log_in.
+        - Second batch contains create_task.
+        - Same demonstration spanned both turns (no spurious start_new).
+    tools:
+      - {name: log_in, description: "Log the visitor in", requires_confirmation: false}
+      - {name: create_task, description: "Create a task", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Please log me in and then create a task called Demo."}
+      - {kind: tool_result, last_call_name: log_in, result: {ok: true, user: "demo"}}
+
+  - name: confirmation_happy_path
+    rubric: |
+      User asks to delete a task. `delete_task` is flagged
+      `requires_confirmation=true`. Important: the way the agent
+      "proposes" a confirmable batch is by emitting `tool_invocations=[...]`
+      WITH the speech that asks for permission. The SERVER inspects the
+      tool spec, sees `requires_confirmation=true`, and parks the batch
+      server-side until the visitor's reply. So Turn 2 should:
+        - have `tool_invocations` containing `delete_task` with sensible args,
+        - have a speech describing what the batch will do AND asking for
+          permission AND naming `delete_task` as needing confirmation.
+      Turn 3 (visitor says "yes"): the schema will include
+      `pending_batch_resolution`; the agent must set it to "accept".
+      PASS if Turn 2 has the proposing batch + permission ask, and
+      Turn 3 has `pending_batch_resolution='accept'`.
+    tools:
+      - {name: delete_task, description: "Delete a task", requires_confirmation: true}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Delete task t-123."}
+      - {kind: user, text: "Yes, please go ahead."}
+
+  - name: confirmation_decline_with_replace
+    rubric: |
+      Turn 2: user asks to delete a task; the agent should propose
+      a confirmable batch (`tool_invocations=[delete_task]` with a
+      permission-asking speech). The server parks it because of the
+      requires_confirmation flag.
+      Turn 3: user declines and asks for a different action ("just
+      archive it instead"). The schema will include
+      `pending_batch_resolution`. The agent must EITHER:
+        - set `pending_batch_resolution='replace'` with new
+          `tool_invocations=[archive_task]`, OR
+        - set `demonstration_action='end_current'`.
+      There is no plain 'decline' resolution. PASS if Turn 3 picks
+      either valid option.
+    tools:
+      - {name: delete_task, description: "Delete a task", requires_confirmation: true}
+      - {name: archive_task, description: "Archive a task", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Delete task t-123."}
+      - {kind: user, text: "Actually no, just archive it instead."}
+
+  - name: confirmation_decline_with_end_current
+    rubric: |
+      Turn 2: user asks to delete a task; agent proposes the
+      confirmable batch (`tool_invocations=[delete_task]` plus a
+      permission-asking speech). Server parks it.
+      Turn 3: user says "no, never mind, just stop". The PRIMARY
+      requirement is `demonstration_action='end_current'` — that's the
+      action that actually ends the demo and drops the pending batch
+      via the cancellation cascade.
+      Note about `pending_batch_resolution` on Turn 3: the schema gates
+      this field on batch_state being `pending_confirmation`, so it is
+      REQUIRED on Turn 3 even though the LLM is using `end_current`.
+      The accepted value here is `keep_waiting` — the cancellation
+      cascade drops the pending batch regardless, so the resolution
+      becomes a no-op. The agent picking `keep_waiting` alongside
+      `end_current` is therefore CORRECT, not a contradiction. The
+      `accept` and `replace` values would be wrong (they conflict with
+      ending the demo). PASS if Turn 3 has `end_current` AND the
+      resolution is `keep_waiting` (or any value, since the cascade
+      overrides it).
+    tools:
+      - {name: delete_task, description: "Delete a task", requires_confirmation: true}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Delete task t-123."}
+      - {kind: user, text: "No, never mind, just stop."}
+
+  - name: ambiguous_interrupt_does_not_switch
+    rubric: |
+      Agent is mid-demo (browse). User says "it'd be nice to also see
+      analytics". This is ambiguous. Agent MUST NOT use start_new this turn.
+      It should set demonstration_action='continue' (or 'end_current' with
+      explicit transcript reasoning, though continue is preferred), speech
+      should reference the active demonstration's name and ask whether to
+      switch. PASS if no start_new and speech asks for clarification.
+    tools:
+      - {name: list_tasks, description: "List tasks", requires_confirmation: false}
+      - {name: get_analytics, description: "Get analytics", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Show me my tasks."}
+      - {kind: user, text: "It'd be nice to also see analytics."}
+
+  - name: clear_interrupt_asks_for_confirmation_then_switches
+    rubric: |
+      Agent is mid-demo (browse). User says "stop this and show me
+      analytics now" — phrasing that sounds unambiguous. Per the
+      mid-demonstration confirmation rule, the agent MUST NOT
+      `start_new` on this turn no matter how clear the visitor sounds:
+      every mid-demo direction-change requires an explicit
+      confirmation handshake.
+      Turn 3 required behaviour:
+        - demonstration_action='continue',
+        - tool_invocations=[] (no new tools dispatched yet),
+        - speech is a one-line confirmation question that names the
+          active demonstration AND the proposed switch (e.g. "I'm in
+          the middle of listing your tasks — want me to stop that
+          and switch to analytics?"),
+        - speech does NOT pretend to have already switched.
+      Turn 4 (visitor: "yes, go ahead"): NOW the agent must set
+      demonstration_action='start_new' with a new demonstration_name
+      and tool_invocations=[get_analytics].
+      PASS if Turn 3 stays on `continue` with a confirmation question
+      AND Turn 4 transitions via `start_new` + get_analytics.
+      FAIL if Turn 3 uses `start_new` (auto-switching on first mention
+      is exactly the bug being guarded against).
+    tools:
+      - {name: list_tasks, description: "List tasks", requires_confirmation: false}
+      - {name: get_analytics, description: "Get analytics", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Show me my tasks."}
+      - {kind: user, text: "Stop this and show me analytics now."}
+      - {kind: user, text: "Yes, go ahead."}
+
+  - name: out_of_scope_refusal
+    rubric: |
+      User asks an unrelated question ("what's the weather in Tokyo?"). Agent
+      must politely refuse and pivot back to the product. PASS if no tool
+      call AND a polite refusal AND a redirection question about the product.
+    tools:
+      - {name: list_tasks, description: "List tasks", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "What's the weather in Tokyo today?"}
+
+  - name: missing_feature_does_not_use_condescending_phrasing
+    rubric: |
+      User asks for a feature that isn't in the registered tools (e.g. "can
+      you transfer money for me?"). The agent's role is a general in-app
+      voice + chat companion (NOT "only in-app"), so the missing-
+      feature refusal must say it can't do that specific thing from this
+      app AND offer help with what it CAN do. PASS if the agent gives a
+      missing-feature refusal AND avoids any phrasing that limits its role
+      to "in-app only" or "specifically designed for X" or that
+      treats the visitor's request as inappropriate.
+    tools:
+      - {name: list_tasks, description: "List tasks", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Can you transfer money to my bank for me?"}
+
+  - name: tool_error_handled_gracefully
+    rubric: |
+      User asks to delete a task. Tool returns {error: "permission denied"}.
+      On TOOL_BATCH_COMPLETED, the agent must acknowledge the failure
+      gracefully and either suggest an alternative OR offer to help with
+      something else. It MUST NOT pretend the action succeeded.
+    tools:
+      - {name: delete_task, description: "Delete a task", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Just delete task t-1 right away."}
+      - {kind: tool_result, last_call_name: delete_task, error: "permission denied"}
+
+  - name: spanish_session_responds_in_spanish
+    rubric: |
+      output_language='Spanish'. User asks (in English) to list tasks.
+      Agent's speech MUST be in Spanish. tool_invocations' arguments may use the
+      English schema (they're not user-facing). PASS if the assistant's spoken
+      reply is in Spanish.
+    output_language: Spanish
+    language_code: es
+    tools:
+      - {name: list_tasks, description: "List tasks", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Show me my tasks."}
+
+  - name: incomplete_voice_utterance_short
+    rubric: |
+      User voice utterance is "and then maybe I should…" — clearly trailing.
+      Agent must classify user_turn_status='incomplete_short' (or
+      'incomplete_long'), set tool_invocations=[], and
+      demonstration_action='continue'. The system prompt instructs the
+      agent to SPEAK a brief warm nudge that acknowledges the trailing
+      utterance (e.g. "What were you going to say?" / "Sounds like you
+      were still thinking — go on.") so the visitor knows their start
+      of thought registered. PASS if incomplete classification AND a
+      brief nudge speech AND continue AND empty tool_invocations.
+      FAIL if the agent treats the utterance as complete (calls tools,
+      switches demo, or answers as if it were a finished question).
+    tools:
+      - {name: list_tasks, description: "List tasks", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "And then maybe I should…"}
+
+  - name: cost_guardrail_awareness
+    rubric: |
+      Per-demo batch ceiling is set very low (1). Agent dispatches its first
+      batch on the user's request. When TOOL_BATCH_COMPLETED fires, the
+      state-context will say "Tool batches dispatched: 1 of 1 max." The
+      agent MUST set demonstration_action='end_current' rather than queue
+      another batch (which would force-end via the ceiling guardrail).
+      PASS if end_current and no further tool_invocations.
+    max_batches_per_demo: 1
+    tools:
+      - {name: get_status, description: "Get status", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Please check the status for me."}
+      - {kind: tool_result, last_call_name: get_status, result: {ok: true}}
+
+  # ──────────────────────────────────────────────────────────────────
+  # Comprehensive scenarios: multi-batch chains, parallel batches,
+  # mixed plans, partial failures, mid-demo events, confirmation
+  # variants, cross-demo handoff.
+  # ──────────────────────────────────────────────────────────────────
+
+  - name: multi_batch_chain_under_one_demo
+    rubric: |
+      User asks for a 3-step chain with HARD dependencies — each step
+      genuinely needs the prior step's result, so the agent cannot
+      parallelize them. Wording: "Log me in, then list my tasks,
+      then look at the FIRST task in that list and create a
+      brand-new one whose name is the first task's name plus
+      ' (copy)'." The third step explicitly references the listing
+      result as input, so listing must complete before create can
+      build the name.
+      Required behavior:
+        Turn 2 (user): dispatch ONLY log_in (start_new + demo_name).
+        Turn 3 (after log_in result): dispatch ONLY list_tasks
+          (continue, same demo). Must NOT bundle create_task here.
+        Turn 4 (after list_tasks result): dispatch ONLY
+          create_task with an argument whose value is 'Old Plan (copy)'
+          or similar copy-of-first naming (the LLM may pick any
+          field key — `title`, `name`, etc. — only the value matters)
+          (continue, same demo).
+      All three batches must live under the SAME demonstration — no
+      spurious start_new on Turns 3 or 4. PASS if batches are split
+      correctly AND tools dispatch in order.
+    tools:
+      - {name: log_in, description: "Log the visitor in", requires_confirmation: false}
+      - {name: list_tasks, description: "List tasks (returns the visitor's existing tasks)", requires_confirmation: false}
+      - {name: create_task, description: "Create a task with the given name", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Log me in, then list my tasks, then look at the FIRST task in that list and create a brand-new one whose name is that first task's name plus ' (copy)'."}
+      - {kind: tool_result, last_call_name: log_in, result: {ok: true, user: "demo"}}
+      - {kind: tool_result, last_call_name: list_tasks, result: [{name: "Old Place"}]}
+
+  - name: parallel_batch_of_three_independent_reads
+    rubric: |
+      User asks for three INDEPENDENT reads in one breath: "Quickly show
+      me my profile, my preferences, and my notification settings."
+      None of these depend on each other. The agent should emit a
+      SINGLE batch on Turn 2 with THREE tool_invocations running in
+      parallel — one for get_profile, one for get_preferences, one for
+      get_notifications. PASS if exactly one batch is dispatched on
+      Turn 2 AND that batch contains all three tool calls. FAIL if the
+      agent splits them across multiple turns (would defeat the
+      parallel-batch contract).
+    tools:
+      - {name: get_profile, description: "Get the visitor's profile", requires_confirmation: false}
+      - {name: get_preferences, description: "Get the visitor's preferences", requires_confirmation: false}
+      - {name: get_notifications, description: "Get notification settings", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Quickly show me my profile, my preferences, and my notification settings."}
+
+  - name: mixed_parallel_then_sequential
+    rubric: |
+      User asks "Fetch my profile and preferences in parallel — those
+      are independent — and once you have both, log me out." This is
+      a mixed plan: a parallel batch followed by a sequential batch.
+      Required behavior:
+        Turn 2: ONE batch with [get_profile, get_preferences] in parallel
+          (start_new). log_out is NOT in this batch — it depends on
+          both reads completing.
+        Turn 3 (after both results land via TOOL_BATCH_COMPLETED):
+          ONE batch with [log_out] (continue, same demo).
+      PASS if Turn 2 has exactly two parallel calls (profile +
+      preferences, no log_out) AND Turn 3 dispatches log_out.
+    tools:
+      - {name: get_profile, description: "Get visitor profile", requires_confirmation: false}
+      - {name: get_preferences, description: "Get visitor preferences", requires_confirmation: false}
+      - {name: log_out, description: "Log the visitor out", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Fetch my profile and preferences (those are independent), and once you have both, log me out."}
+      - {kind: tool_result, last_call_name: get_profile, result: {name: "demo"}}
+      - {kind: tool_result, last_call_name: get_preferences, result: {theme: "dark"}}
+
+  - name: parallel_batch_partial_failure_acknowledged
+    rubric: |
+      User asks "pull up my profile and my analytics together." Agent
+      dispatches a parallel batch with both. get_profile succeeds,
+      get_analytics returns error="permission denied". On the
+      tool_batch_completed wake the agent MUST:
+        - Acknowledge the analytics failure explicitly (do NOT pretend
+          success). Naming the failure or its cause counts.
+        - Either propose an alternative tool action OR offer to help
+          with something else.
+      PASS if failure is explicitly acknowledged AND no false success.
+    tools:
+      - {name: get_profile, description: "Get visitor profile", requires_confirmation: false}
+      - {name: get_analytics, description: "Get analytics", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Pull up my profile and my analytics together please."}
+      - {kind: tool_result, last_call_name: get_profile, result: {name: "demo"}}
+      - {kind: tool_result, last_call_name: get_analytics, error: "permission denied"}
+
+  - name: clean_demo_handoff_after_completion
+    rubric: |
+      Turn 2 (user): "Show me all my tasks." → agent dispatches
+        list_tasks (start_new, demo_name about listing).
+      Turn 3 (list_tasks result lands): agent summarises. The
+        outcome here gates Turn 4's expected behaviour:
+          - Turn 3 = `end_current`: the demo is OVER. Turn 4's new
+            request is NOT mid-demo, so `start_new` is allowed
+            directly.
+          - Turn 3 = `continue`: the demo is STILL active. Turn 4's
+            new request IS mid-demo, so per the confirmation rule
+            the agent must confirm first (no auto-switch).
+      Turn 4 (user): "Okay, now turn ON push notifications for me."
+      Turn 4 acceptable behaviour conditional on Turn 3:
+        Path A (Turn 3 was `end_current`):
+          - `start_new` + tool_invocations including
+            update_notifications, OR
+          - `start_new` + a brief clarifying question (no tool
+            dispatch yet) if the agent legitimately needs to clarify
+            (e.g. which channels).
+        Path B (Turn 3 was `continue`):
+          - `demonstration_action='continue'`, `tool_invocations=[]`,
+            speech is a one-line confirmation question that names
+            the active listing demo AND the proposed notifications
+            switch.
+      Always FAIL:
+        - Turn 4 uses `start_new` while Turn 3 was `continue` (auto
+          mid-demo switch — exactly the bug being guarded against).
+        - Turn 4 stays on `continue` while Turn 3 was `end_current`
+          and the agent makes no demo transition at all.
+    tools:
+      - {name: list_tasks, description: "List tasks", requires_confirmation: false}
+      - {name: update_notifications, description: "Update notification settings (channels, frequency, etc.)", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Show me all my tasks."}
+      - {kind: tool_result, last_call_name: list_tasks, result: [{name: "Refactor"}]}
+      - {kind: user, text: "Okay now turn ON push notifications for me."}
+
+  - name: chitchat_during_in_flight_no_dispatch
+    rubric: |
+      Turn 2 (user): "Show me all my tasks." → agent dispatches
+        list_tasks (start_new). Batch is now in flight.
+      Turn 3 (user, before any result lands): "By the way, what's your
+        name?" This is unrelated chit-chat. Agent MUST:
+        - NOT call any tool (tool_invocations empty / absent).
+        - NOT use start_new (no clear permission to switch).
+        - Set demonstration_action='continue' (the in-flight batch
+          keeps running in the background).
+        - Answer the chit-chat in speech.
+      PASS if Turn 3 has empty/absent tool_invocations AND continue
+      AND the speech answers the name question.
+    tools:
+      - {name: list_tasks, description: "List tasks", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Show me all my tasks."}
+      - {kind: user, text: "By the way, what's your name?"}
+
+  - name: out_of_scope_mid_demo_does_not_break_demo
+    rubric: |
+      Turn 2 (user): "Show me my tasks." → list_tasks
+        dispatched (start_new).
+      Turn 3 (user, batch still in flight): "What's the weather in
+        Tokyo right now?" This is out of product scope. Agent MUST:
+        - Politely refuse / pivot back to the product (no
+          condescending phrasing, not "I'm only an in-app agent").
+        - Emit NO tool calls.
+        - Set demonstration_action='continue' (do not break the
+          active demo because of an off-topic question).
+      PASS if polite redirect AND no tool calls AND continue.
+    tools:
+      - {name: list_tasks, description: "List tasks", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Show me my tasks."}
+      - {kind: user, text: "What's the weather in Tokyo right now?"}
+
+  - name: pending_batch_keep_waiting_then_accept_later
+    rubric: |
+      Pending-confirmation handshake, KEEP_WAITING leg followed by
+      ACCEPT on a later turn. Tests that an intermediate clarifying
+      question or chitchat does NOT corrupt the parked batch — it
+      stays parked while the agent answers the question, and accepts
+      cleanly when the visitor finally confirms.
+      Turn 2 (user voice): "Delete task p1." delete_task is
+        confirmable. Agent must emit
+        tool_invocations=[delete_task] alongside a
+        permission-asking speech (the correct way to propose a
+        confirmable batch — the server inspects the requires_confirmation
+        flag and parks it).
+      Turn 3 (user voice): "Wait, hold on — what does deleting it
+        actually do? Does it remove the task and any attachments?"
+        This is a CLARIFYING QUESTION, not an accept and not a
+        decline. The state-machine behaviour is the primary signal
+        graded here; the speech content is secondary.
+        Required state-machine behaviour:
+          - demonstration_action='continue',
+          - pending_batch_resolution='keep_waiting' (parked batch
+            stays exactly as it was),
+          - tool_invocations=[] (no replacement, no new dispatch).
+        Speech requirements (lenient — any of these passes):
+          - the agent answers the question with whatever knowledge
+            it has, then re-asks for permission, OR
+          - the agent honestly says it doesn't have that detail
+            (acceptable — no software_docs are seeded for this
+            scenario, so the agent has no factual basis), then
+            re-asks for permission or restates that confirmation is
+            still pending.
+          The agent must NOT fabricate behaviour of `delete_task`
+          if it doesn't actually know.
+        FAIL on Turn 3:
+          - dispatching a brand-new tool (e.g. some lookup tool) —
+            the parked batch must remain the only batch in flight,
+          - using `replace` with no concrete replacement,
+          - using `accept` without the visitor confirming,
+          - emitting demonstration_action='start_new' or 'end_current'
+            (no demo transition for a clarifying question),
+          - inventing what delete does (fabrication is worse than
+            honest uncertainty).
+      Turn 4 (user voice): "Got it, yes, go ahead and delete it."
+        Now the visitor accepts. Agent MUST:
+          - pending_batch_resolution='accept' (this alone dispatches
+            the parked delete_task batch).
+          - Re-emitting the same tool_invocations is tolerated;
+            emitting a DIFFERENT tool than the originally-parked
+            delete_task is wrong (would suggest the agent lost
+            track of what was parked).
+      PASS if Turn 3 keeps the batch parked via keep_waiting AND
+      Turn 4 accepts the original delete_task. FAIL if the parked
+      batch was replaced, ended, or corrupted at any point between
+      Turn 2 and Turn 4.
+    tools:
+      - {name: delete_task, description: "Delete a task", requires_confirmation: true}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Delete task p1."}
+      - {kind: user, text: "Wait, hold on — what does deleting it actually do? Does it remove the task and any attachments?"}
+      - {kind: user, text: "Got it, yes, go ahead and delete it."}
+
+  - name: confirmable_then_followup_step
+    rubric: |
+      Turn 2 (user): "Delete task p1." delete_task is
+        confirmable → agent emits a proposing batch
+        (tool_invocations=[delete_task]) with a permission-asking
+        speech. Server parks it.
+      Turn 3 (user): "Yes, please go ahead." → agent sets
+        pending_batch_resolution='accept'.
+      Turn 4 (delete result lands): agent acknowledges success
+        naturally; either continue or end_current is acceptable.
+      Turn 5 (user): "Now create one called p2." → agent must dispatch
+        create_task. Either start_new (fresh demo) OR continue
+        (queueing under same demo) is acceptable; the WRONG outcome
+        is failing to dispatch create_task at all.
+      PASS if Turn 5 emits tool_invocations including create_task
+      with name argument matching "p2".
+    tools:
+      - {name: delete_task, description: "Delete a task", requires_confirmation: true}
+      - {name: create_task, description: "Create a task", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Delete task p1."}
+      - {kind: user, text: "Yes, please go ahead."}
+      - {kind: tool_result, last_call_name: delete_task, result: {ok: true}}
+      - {kind: user, text: "Now create one called p2."}
+
+  - name: replace_with_confirmable_then_accept
+    rubric: |
+      Turn 2 (user): "Delete task p1." delete_task is
+        confirmable → agent proposes delete_task with permission
+        ask. Server parks it.
+      Turn 3 (user): "Actually no, transfer it to user X instead — and
+        yes, please ask me before doing that too."
+        transfer_task is ALSO confirmable. Agent must set
+        pending_batch_resolution='replace' with new
+        tool_invocations=[transfer_task]. The replacement is
+        itself confirmable, so it gets re-parked.
+      Turn 4 (user): "Okay, go ahead." → agent must set
+        pending_batch_resolution='accept' to dispatch the parked
+        transfer_task.
+      PASS if Turn 3 uses replace+transfer_task AND Turn 4 uses
+      accept.
+    tools:
+      - {name: delete_task, description: "Delete a task", requires_confirmation: true}
+      - {name: transfer_task, description: "Transfer task to another user", requires_confirmation: true}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Delete task p1."}
+      - {kind: user, text: "Actually no, transfer it to user X instead — and yes, please ask me before doing that too."}
+      - {kind: user, text: "Okay, go ahead."}
+
+  - name: incomplete_voice_during_in_flight
+    rubric: |
+      Turn 2 (user): "Show me my tasks." → list_tasks
+        dispatched (start_new). Batch is in flight.
+      Turn 3 (user voice, clearly trailing): "And maybe also…"
+        This is an incomplete utterance. Agent MUST:
+        - Set user_turn_status='incomplete_short' (or
+          'incomplete_long').
+        - Speak a brief warm nudge acknowledging the trailing
+          utterance (e.g. "What did you want to also see?", "Go
+          on — what's next?"). The system prompt explicitly asks
+          for a short nudge here so the visitor knows the start
+          of their thought was registered.
+        - Emit NO tool_invocations (the in-flight batch must
+          stay untouched).
+        - Set demonstration_action='continue' (active demo state
+          must NOT be touched while waiting for the rest of the
+          utterance).
+      PASS if incomplete classification AND a brief nudge speech
+      AND no tool calls AND continue. FAIL if the agent calls a
+      new tool, switches demo, or answers the utterance as if it
+      were a finished question.
+    tools:
+      - {name: list_tasks, description: "List tasks", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Show me my tasks."}
+      - {kind: user, text: "And maybe also…"}
+
+  - name: cost_guardrail_force_end_at_zero_remaining
+    rubric: |
+      Per-demo batch ceiling is 2. The user describes a workflow where
+      the second step's input depends on the first step's result, so
+      the agent CANNOT parallelize them: "Run a deep diagnostic. Then
+      based on whatever it returns, run the auto-repair tool with the
+      issue ID it gave back."
+      Required behavior:
+        Turn 2 (user): dispatch ONLY run_diagnostic (start_new). Do
+          NOT queue auto_repair in the same batch — it depends on
+          diagnostic's result.
+        Turn 3 (after diagnostic result lands): dispatch
+          auto_repair with the issue_id from the result (continue,
+          same demo). This is the second batch; counter is now 2 of 2.
+        Turn 4 (after auto_repair result lands): the state context
+          shows "Tool batches dispatched: 2 of 2 max." The agent MUST
+          set demonstration_action='end_current' (queueing a third
+          batch would be force-ended by the guardrail).
+      PASS if the final turn (after the second batch lands) sets
+      end_current AND emits no further tool_invocations.
+    max_batches_per_demo: 2
+    tools:
+      - {name: run_diagnostic, description: "Run a deep system diagnostic. Returns {issue_id, severity}.", requires_confirmation: false}
+      - {name: auto_repair, description: "Run the auto-repair tool for a specific issue_id surfaced by run_diagnostic.", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Run a deep diagnostic. Then based on whatever issue ID it returns, run the auto-repair tool using that exact ID."}
+      - {kind: tool_result, last_call_name: run_diagnostic, result: {issue_id: "ISS-7421", severity: "medium"}}
+      - {kind: tool_result, last_call_name: auto_repair, result: {ok: true, fixed: "ISS-7421"}}
+
+  - name: spanish_multi_turn_continuity
+    rubric: |
+      output_language='Spanish'. Multi-turn dialogue: user asks (in
+      English) to list tasks, then asks for analytics. Across
+      ALL turns where the agent speaks (including kickoff greeting),
+      the agent's WRAPPER text must be in Spanish.
+      IMPORTANT for grading: PROPER NOUNS and DATA VALUES copied
+      verbatim from tool results (task names like "Refactor",
+      identifiers, raw numbers, etc.) are NOT translated and are NOT
+      a violation — the agent is correctly quoting data. Only the
+      agent's connective sentence frame, verbs, and explanations
+      need to be in Spanish. Example PASSING utterance:
+      "Encontré 1 tarea: Refactor." (frame in Spanish, data verbatim).
+      Example FAILING utterance: "I found 1 task: Refactor."
+      (frame in English).
+      Also: tool_invocations' arguments use the English schema (not
+      user-facing) — never grade those.
+      PASS if every non-empty speech utterance has its agent-frame in
+      Spanish. Verbatim data from tool results is permitted.
+    output_language: Spanish
+    language_code: es
+    tools:
+      - {name: list_tasks, description: "List tasks", requires_confirmation: false}
+      - {name: get_analytics, description: "Get analytics", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Show me my tasks."}
+      - {kind: tool_result, last_call_name: list_tasks, result: [{name: "Refactor"}]}
+      - {kind: user, text: "Now show me analytics please."}
+
+  - name: tool_result_counting_no_filler_trap
+    rubric: |
+      Filler-trap regression guard for the binary tool_batch_completed
+      contract: `continue` MUST queue more tools, `end_current` MUST
+      deliver the concrete answer in speech. The visitor asks a
+      question that can be answered directly from a single tool
+      result without any follow-up call: "How many tasks are in the
+      backlog, in review, and in done?". list_tasks returns the FULL
+      set of tasks; the agent can filter and count by status in its
+      own reasoning.
+      Turn 2 (user_voice): start_new + tool_invocations=[list_tasks]
+        with a counting-flavoured demonstration_name.
+      Turn 3 (tool_batch_completed, results landed): the data is
+        sufficient to answer directly. Per the binary contract, the
+        agent MUST pick exactly one of:
+          (a) `end_current` + tool_invocations=[] + speech that
+              delivers the CONCRETE counts: each of the three
+              statuses (backlog / review / done) named, each with a
+              specific numeric count (e.g. "9 in backlog, 3 in
+              review, 2 in done"). This is the preferred path for
+              this scenario because the data is already sufficient
+              to answer.
+          (b) `continue` + tool_invocations populated with real
+              follow-up reads (e.g. three parallel list_tasks calls
+              with status filters). Speech may be a brief progress
+              one-liner. Acceptable if the agent prefers a
+              tool-driven aggregation path, but it MUST queue tools
+              this turn.
+      ALWAYS FAIL on Turn 3:
+        - `continue` + tool_invocations=[] (regardless of speech
+          content). The contract requires continue to queue tools.
+        - Filler speech that promises future work with no delivery
+          ("one moment while I total that up", "let me count those",
+          "give me a sec") AND no tool_invocations queued. There is
+          no follow-up turn — this is exactly the bug being guarded
+          against.
+        - end_current with no concrete counts in speech (just a
+          generic "okay, all done" without the actual numbers).
+      PASS if Turn 3 either delivers concrete counts under
+      `end_current`, or queues real follow-up tools under `continue`.
+    tools:
+      - {name: list_tasks, description: "List all tasks. Returns an array of {id, title, status} objects.", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "How many tasks are in the backlog, in review, and in done?"}
+      - {kind: tool_result, last_call_name: list_tasks, result: [
+          {id: "t1", title: "Polish picker", status: "in_progress"},
+          {id: "t2", title: "InApp tour", status: "backlog"},
+          {id: "t3", title: "Bulk-edit shortcut", status: "review"},
+          {id: "t4", title: "Burndown cache", status: "in_progress"},
+          {id: "t5", title: "Avatar S3", status: "backlog"},
+          {id: "t6", title: "Doc labels", status: "backlog"},
+          {id: "t7", title: "Search fuzzy", status: "backlog"},
+          {id: "t8", title: "Search index", status: "backlog"},
+          {id: "t9", title: "Search snippets", status: "backlog"},
+          {id: "t10", title: "Sentry spike", status: "in_progress"},
+          {id: "t11", title: "Empty state", status: "review"},
+          {id: "t12", title: "Cmd-K palette", status: "done"},
+          {id: "t13", title: "Flaky test", status: "done"},
+          {id: "t14", title: "GDPR audit", status: "backlog"},
+          {id: "t15", title: "Lazy chart lib", status: "backlog"},
+          {id: "t16", title: "Label colour picker", status: "in_progress"},
+          {id: "t17", title: "OAuth Safari", status: "review"},
+          {id: "t18", title: "Q3 roadmap", status: "in_progress"},
+          {id: "t19", title: "TaskRow refactor", status: "backlog"},
+          {id: "t20", title: "QA triage", status: "review"}
+        ]}
+
+  - name: two_step_with_confirmation_between
+    rubric: |
+      User asks "Delete task p1, and then create one called p2."
+      delete_task is confirmable; create_task is not.
+      Required behavior:
+        Turn 2 (user): propose ONLY delete_task (confirmable). Do
+          NOT include create_task in the same batch — it depends
+          on the delete completing AND grouping a confirmable with a
+          non-confirmable in one batch is wrong (server would park
+          the whole batch, blocking the non-confirmable too).
+        Turn 3 (user "yes"): pending_batch_resolution='accept'.
+        Turn 4 (delete result lands): agent must NOW dispatch
+          create_task as the next batch under the SAME demo
+          (continue) with name argument matching "p2".
+      PASS if Turn 2 has only delete_task AND Turn 3 accepts AND
+      Turn 4 dispatches create_task.
+    tools:
+      - {name: delete_task, description: "Delete a task", requires_confirmation: true}
+      - {name: create_task, description: "Create a task", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Delete task p1, and then create one called p2."}
+      - {kind: user, text: "Yes, please go ahead."}
+      - {kind: tool_result, last_call_name: delete_task, result: {ok: true}}
+
+  - name: tool_timeout_acknowledged
+    rubric: |
+      User asks for analytics. Tool returns error="timeout: tool did
+      not respond within 60s". On the tool_batch_completed wake the
+      agent MUST:
+        - Acknowledge the timeout (the tool did not finish in time —
+          do NOT pretend it succeeded).
+        - Either offer to retry, suggest an alternative, or invite
+          the user to try something else.
+      PASS if timeout is acknowledged AND no false success.
+    tools:
+      - {name: get_analytics, description: "Get analytics", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Pull up my analytics please."}
+      - {kind: tool_result, last_call_name: get_analytics, error: "timeout: tool did not respond within 60s"}
+
+  # ──────────────────────────────────────────────────────────────────
+  # Edge-case scenarios: malformed payloads, system wakes, multi-
+  # utterance confirmations, demo-name distinctness, summarization,
+  # real batch timeout, text-during-voice interrupt.
+  # ──────────────────────────────────────────────────────────────────
+
+  - name: malformed_tool_result_payload_acknowledged
+    rubric: |
+      User asks for analytics. The tool result is a malformed/garbage
+      payload (HTML 500 page returned where JSON was expected). On
+      tool_batch_completed the agent MUST:
+        - Acknowledge that the data isn't usable / the call did not
+          return a sensible result.
+        - NOT pretend success — must NOT recite or paraphrase any
+          numbers or facts as if they were real analytics.
+        - Either offer to retry or invite the visitor to try
+          something else.
+      PASS if the agent honestly acknowledges the unusable payload AND
+      does not fabricate analytics content.
+    tools:
+      - {name: get_analytics, description: "Get analytics", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Pull up my analytics please."}
+      - {kind: tool_result, last_call_name: get_analytics, result: "<!DOCTYPE html><html><body><h1>500 Internal Server Error</h1><p>backend unavailable</p></body></html>"}
+
+  - name: multi_utterance_yes_then_do_it
+    rubric: |
+      Turn 2 (user voice): "Delete task p1." delete_task is
+        confirmable. The CORRECT way to propose a confirmable batch
+        is to emit `tool_invocations=[delete_task]` ALONGSIDE a
+        permission-asking speech — the server inspects the
+        requires_confirmation flag and parks the batch automatically.
+        Turn 2 having a populated tool_invocations is therefore the
+        intended behaviour and IS NOT a violation.
+      Turn 3 (user voice, very short): "Yeah." — could be classified
+        either way: the agent might treat it as complete and accept
+        OR as incomplete_short and stay quiet.
+      Turn 4 (user voice): "Do it." — full permission.
+      Across turns 3 and 4 the pending batch must NEVER be corrupted
+      (must remain parked OR transition to in-flight via accept;
+      must never end up with an in-flight batch alongside a still-
+      parked batch). By the end of turn 4 the parked
+      delete_task must have been ACCEPTED (transitioned to
+      in-flight), OR the agent should have asked another clarifying
+      question while keeping the batch parked.
+      Always FAIL: emitting a brand-new, DIFFERENT tool_invocations
+      batch on turn 3 or 4 (e.g. dispatching list_tasks or some
+      tool other than the parked delete_task). Re-emitting the
+      same parked batch on accept is unnecessary but tolerated; the
+      `accept` resolution alone is what dispatches the held batch.
+      PASS if the parked batch is either accepted or kept parked
+      across both turns, with no spurious new/different batch.
+    tools:
+      - {name: delete_task, description: "Delete a task", requires_confirmation: true}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Delete task p1."}
+      - {kind: user, text: "Yeah."}
+      - {kind: user, text: "Do it."}
+
+  - name: demonstration_name_distinct_across_two_demos
+    rubric: |
+      Sequential demos exercising whether the agent picks
+      meaningfully distinct demonstration_name values rather than
+      reusing the same string. The mid-demo confirmation rule may
+      defer the second start_new by one turn — that's still fine
+      for grading; the rubric only cares about the eventual
+      demonstration_names being distinct.
+      Turn 2 (user): "Show me my tasks." → start_new with a
+        listing-flavoured demonstration_name.
+      Turn 3 (list result lands): agent summarises; either continue
+        or end_current is acceptable.
+      Turn 4 (user): "Now turn ON push notifications."
+        - If Turn 3 was end_current → Turn 4 should use `start_new`
+          with a notifications-flavoured demonstration_name (this
+          test's primary signal).
+        - If Turn 3 was continue → mid-demo: Turn 4 must instead be
+          `continue` + a confirmation question. The eventual
+          start_new (when it lands on a follow-up confirmation turn,
+          which this rubric does not exercise) would carry the
+          notifications-flavoured name.
+      PASS if Turn 2 used a listing-flavoured demonstration_name AND
+      Turn 4's behaviour is consistent with Turn 3 above (start_new
+      with a distinct, notifications-flavoured name in Path A;
+      continue + confirmation question in Path B). FAIL if Turn 4
+      uses `start_new` with a name that is empty or simply repeats
+      Turn 2's listing name verbatim, or if Turn 4 uses `start_new`
+      while Turn 3 was `continue` (mid-demo auto-switch).
+    tools:
+      - {name: list_tasks, description: "List tasks", requires_confirmation: false}
+      - {name: update_notifications, description: "Update notification settings", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Show me my tasks."}
+      - {kind: tool_result, last_call_name: list_tasks, result: [{name: "Refactor"}]}
+      - {kind: user, text: "Now turn ON push notifications."}
+
+  - name: conversation_summarization_used_on_later_turn
+    rubric: |
+      A pre-seeded conversation summary is present in the agent's
+      context: the summary says the visitor's name is "Trung" and
+      their goal is "set up a task called Garden Suite". The
+      visitor then asks (Turn 2) "By the way, do you remember my
+      name and what I'm trying to do?".
+      On Turn 2 the agent's speech MUST reference both pieces of
+      summarized context — the name "Trung" and the goal mentioning
+      "Garden Suite" (or "set up a task"). PASS if both are
+      acknowledged. FAIL if the agent says it doesn't have that
+      info or makes up different details.
+    fixed_summary: "The visitor's name is Trung and they are trying to set up a task called Garden Suite. The agent has greeted them and explained the task setup flow at a high level."
+    history_window: {max_window: 4, summarize_chunk: 2}
+    tools:
+      - {name: list_tasks, description: "List tasks", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "By the way, do you remember my name and what I'm trying to do?"}
+
+  - name: tool_batch_real_timeout_acknowledged
+    rubric: |
+      Per-instance batch timeout is shrunk to 1 second. User asks
+      for analytics → agent dispatches get_analytics (start_new).
+      No tool_result is delivered. After ~2 seconds the dispatcher's
+      batch-timeout fires, force-completing the unresolved call with
+      an error like "tool did not finish within the 1-second batch
+      timeout".
+      On the resulting tool_batch_completed wake the agent MUST:
+        - Acknowledge the timeout / failure honestly.
+        - NOT pretend it succeeded.
+      Acceptable follow-ups (any of these is fine):
+        - Offer to retry in speech and wait for the visitor's reply.
+        - Auto-retry by re-dispatching get_analytics in the same
+          turn (continue + tool_invocations=[get_analytics]) AS LONG
+          AS the speech also clearly states the previous attempt
+          timed out.
+        - Suggest an alternative or invite the visitor to try
+          something else.
+      PASS if the agent acknowledges the timeout AND no false
+      success. Auto-retry is NOT a violation — it's a reasonable
+      response to a transient timeout, provided the failure is
+      acknowledged.
+    batch_timeout_seconds: 1.0
+    tools:
+      - {name: get_analytics, description: "Get analytics", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Pull up my analytics please."}
+      - {kind: wait_seconds, seconds: 2.5}
+
+  - name: text_message_during_in_flight_voice_batch
+    rubric: |
+      Turn 2 (user voice): "Show me my tasks." → list_tasks
+        dispatched (start_new). Batch in flight.
+      Turn 3 (text_message wake — the visitor types via the chat
+        input INSTEAD of voice): "actually nevermind, just show me
+        my analytics now."
+      Even though the wake is a text message and the wording sounds
+      unambiguous, the mid-demonstration confirmation rule still
+      applies — the active list-tasks demo must NOT be
+      auto-interrupted.
+      Turn 3 required behaviour:
+        - demonstration_action='continue',
+        - tool_invocations=[] (no new tools yet),
+        - speech is a one-line confirmation question that names the
+          active demonstration AND the proposed switch (e.g.
+          "I'm in the middle of listing your tasks — want me to
+          stop that and switch to analytics?"),
+        - speech does NOT pretend the switch has already happened.
+      Turn 4 (visitor: "yes please"): the agent now sets
+      demonstration_action='start_new' with a fresh
+      demonstration_name and tool_invocations=[get_analytics].
+      PASS if Turn 3 is `continue` + confirmation question AND Turn 4
+      transitions via `start_new` + get_analytics.
+      FAIL if Turn 3 uses `start_new` (auto-switching on first
+      mention is the bug being guarded against, and the rule applies
+      regardless of whether the wake is voice or text).
+    tools:
+      - {name: list_tasks, description: "List tasks", requires_confirmation: false}
+      - {name: get_analytics, description: "Get analytics", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Show me my tasks."}
+      - {kind: text_message, text: "actually nevermind, just show me my analytics now."}
+      - {kind: user, text: "Yes please."}
+
+  # ──────────────────────────────────────────────────────────────────
+  # Mid-demonstration confirmation handshake. The rule is: a new
+  # direction mid-demo NEVER triggers start_new on first mention;
+  # the agent must always ask first and only switch on the
+  # visitor's follow-up "yes". These scenarios pin down the decline
+  # and re-pivot legs of the handshake — the accept leg is covered
+  # by clear_interrupt_asks_for_confirmation_then_switches.
+  # ──────────────────────────────────────────────────────────────────
+
+  - name: mid_demo_decline_after_confirmation_keeps_active_demo
+    rubric: |
+      Mid-demonstration confirmation handshake — DECLINE leg.
+      Turn 2 (user): "Show me my tasks." → start_new with a
+        listing-flavoured demonstration_name; tool_invocations=[list_tasks].
+      Turn 3 (user): "Actually maybe also show me analytics." A
+        mid-demo direction-change. Per the always-confirm rule the
+        agent must NOT start_new — it must
+        demonstration_action='continue', tool_invocations=[], and
+        SPEAK a one-line confirmation that names the active listing
+        demo and the proposed analytics switch.
+      Turn 4 (user): "Nevermind, just keep going with the
+        properties." The visitor declines the switch. The agent
+        must stay on the active demonstration:
+          - demonstration_action='continue',
+          - tool_invocations=[],
+          - speech briefly acknowledges sticking with the active
+            demo (or asks whatever follow-up makes sense for
+            continuing the listing flow).
+        The agent must NOT silently jump to start_new for analytics
+        and must NOT end the active demo.
+      PASS if Turn 3 stays on `continue` with a confirmation
+      question AND Turn 4 stays on `continue` (no `start_new`, no
+      `end_current`) and acknowledges the decline. FAIL if Turn 3
+      uses `start_new`, OR Turn 4 uses `start_new` (auto-switching
+      after the visitor declined), OR Turn 4 uses `end_current`
+      (the visitor wanted to KEEP going, not stop).
+    tools:
+      - {name: list_tasks, description: "List tasks", requires_confirmation: false}
+      - {name: get_analytics, description: "Get analytics", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Show me my tasks."}
+      - {kind: user, text: "Actually maybe also show me analytics."}
+      - {kind: user, text: "Nevermind, just keep going with the tasks."}
+
+  - name: mid_demo_pivot_during_confirmation_re_asks
+    rubric: |
+      Mid-demonstration confirmation handshake — RE-PIVOT leg.
+      Turn 2 (user): "Show me my tasks." → start_new +
+        list_tasks.
+      Turn 3 (user): "Actually stop and show me analytics
+        instead." Mid-demo direction-change. The agent must NOT
+        start_new — must set demonstration_action='continue',
+        tool_invocations=[], and SPEAK a confirmation question
+        naming the listing demo and the proposed analytics switch.
+      Turn 4 (user): "Wait, nevermind analytics — show me my
+        notification settings instead." The visitor pivoted to a
+        DIFFERENT new target (notifications) before confirming the
+        analytics switch. The agent must NOT start_new on this
+        turn either — re-pivot is still a first mention of a new
+        goal. Required:
+          - demonstration_action='continue',
+          - tool_invocations=[],
+          - speech is a fresh confirmation question that names the
+            active listing demo AND the NEW proposed switch
+            (notifications, not analytics).
+      PASS if both Turn 3 and Turn 4 stay on `continue` with a
+      confirmation question, AND Turn 4's question names the
+      notifications target (not analytics). FAIL if either turn
+      uses `start_new`, OR Turn 4's confirmation question still
+      references analytics (the visitor re-pivoted; the question
+      must follow).
+    tools:
+      - {name: list_tasks, description: "List tasks", requires_confirmation: false}
+      - {name: get_analytics, description: "Get analytics", requires_confirmation: false}
+      - {name: get_notification_settings, description: "Get notification settings", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Show me my tasks."}
+      - {kind: user, text: "Actually stop and show me analytics instead."}
+      - {kind: user, text: "Wait, nevermind analytics — show me my notification settings instead."}
+
+  # ──────────────────────────────────────────────────────────────────
+  # Parallel-with-confirmation scenarios. The single-confirmable and
+  # parallel-no-confirmation cases are already covered above; these
+  # close the gap where confirmation flags interact with parallel
+  # batches and cost guardrails.
+  # ──────────────────────────────────────────────────────────────────
+
+  - name: multiple_independent_confirmables_one_batch
+    rubric: |
+      User asks "delete p1, p2, and p3" — three confirmable calls
+      with no inter-dependencies. The server parks any batch where
+      at least one tool_invocations entry has
+      requires_confirmation=true, so the correct behaviour is to
+      emit ONE batch carrying all three deletes (parked together by
+      the server) plus a permission-asking speech that names all
+      three targets.
+      Turn 2 required behavior:
+        - tool_invocations contains exactly 3 entries, one per
+          delete target (p1, p2, p3 in any order),
+        - speech asks for permission and names all three deletes
+          (or summarises "three deletions") so the visitor knows
+          what is being parked,
+        - demonstration_action='start_new'.
+      Turn 3 (user: "yes, go ahead"):
+        - pending_batch_resolution='accept'.
+        - Re-emitting tool_invocations is tolerated; emitting a
+          DIFFERENT batch is wrong (accept alone dispatches the
+          held batch).
+      PASS if Turn 2 has exactly 3 deletes in one batch AND the
+      speech asks permission for all three AND Turn 3 accepts.
+      FAIL if Turn 2 emits only one delete (forcing the visitor
+      through three round-trips for what should be one ask) or
+      splits across multiple turns.
+    tools:
+      - {name: delete_task, description: "Delete a task by id", requires_confirmation: true}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Delete task p1, p2, and p3."}
+      - {kind: user, text: "Yes, go ahead."}
+
+  - name: mixed_parallel_split_confirmable_from_read
+    rubric: |
+      User asks for two independent things in one breath, but one is
+      a non-confirmable read and the other is a confirmable write:
+      "Pull up my analytics AND delete task p1." get_analytics
+      is requires_confirmation=false; delete_task is
+      requires_confirmation=true.
+      Bundling them in a single batch is WRONG — the server would
+      park the whole batch (because at least one entry needs
+      confirmation), blocking the cheap read for no reason. The
+      agent must split: emit only ONE of the two on Turn 2, and
+      address the other on a later turn.
+      Turn 2 acceptable behaviours:
+        (a) tool_invocations=[get_analytics] only (start_new) —
+            the agent runs the read first, will propose the delete
+            after. Preferred (cheap read isn't blocked behind
+            confirmation latency).
+        (b) tool_invocations=[delete_task] only (start_new) —
+            the agent proposes the confirmable batch first; less
+            ideal but still respects the no-mixing rule.
+      Turn 2 ALWAYS FAILING:
+        - tool_invocations contains BOTH get_analytics and
+          delete_task in one batch — this is the bug being
+          guarded against. The whole batch would park, blocking
+          the read.
+      PASS if Turn 2 has exactly one of get_analytics or
+      delete_task in tool_invocations (not both).
+    tools:
+      - {name: get_analytics, description: "Get visitor analytics", requires_confirmation: false}
+      - {name: delete_task, description: "Delete a task by id", requires_confirmation: true}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Pull up my analytics AND delete task p1."}
+
+  - name: replace_with_parallel_confirmables
+    rubric: |
+      Turn 2 (user): "Delete task p1." delete_task is
+        confirmable → agent proposes tool_invocations=[delete_task]
+        with a permission ask. Server parks it.
+      Turn 3 (user): "Actually no, transfer it to user X AND
+        archive it as well — and yes please ask before each."
+        transfer_task and archive_task are BOTH confirmable.
+        Agent must set pending_batch_resolution='replace' with new
+        tool_invocations=[transfer_task, archive_task] —
+        replacing the parked single-call batch with a parallel
+        batch of two confirmables. Multiple confirmables in one
+        batch is correct here (the server parks the whole batch
+        for one combined confirmation), same shape as
+        multiple_independent_confirmables_one_batch.
+      Turn 4 (user): "Okay, go ahead." → agent must set
+        pending_batch_resolution='accept' to dispatch the parked
+        [transfer_task, archive_task] batch.
+      PASS if Turn 3 uses replace AND tool_invocations contains
+      both transfer_task AND archive_task AND Turn 4
+      accepts. FAIL if Turn 3 emits only one of the two
+      replacement tools, or replaces with a single-call batch
+      and tries to add the other on Turn 4.
+    tools:
+      - {name: delete_task, description: "Delete a task", requires_confirmation: true}
+      - {name: transfer_task, description: "Transfer task to another user", requires_confirmation: true}
+      - {name: archive_task, description: "Archive a task", requires_confirmation: true}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Delete task p1."}
+      - {kind: user, text: "Actually no, transfer it to user X AND archive it as well — and yes please ask before each."}
+      - {kind: user, text: "Okay, go ahead."}
+
+  - name: cost_guardrail_meets_parallel_reads
+    rubric: |
+      Per-demo batch ceiling is 1. User asks for THREE independent
+      reads in one breath: "Quickly show me my profile, my
+      preferences, and my notification settings." The cheapest way
+      to satisfy this within the 1-batch budget is to bundle all
+      three reads into ONE parallel batch (three tool_invocations,
+      one batch slot consumed).
+      Turn 2 required behavior:
+        - tool_invocations contains exactly 3 entries (get_profile,
+          get_preferences, get_notifications) all in the SAME batch,
+        - demonstration_action='start_new',
+        - the agent does NOT split into multiple sequential batches
+          (would exceed the 1-batch budget and trigger the
+          force-end cascade).
+      Turn 3 (after the parallel batch's results land): state
+      context shows "Tool batches dispatched: 1 of 1 max." The
+      agent must set demonstration_action='end_current' and emit
+      no further tool_invocations.
+      PASS if Turn 2 has all three reads in one batch AND Turn 3
+      uses end_current with no tool_invocations.
+    max_batches_per_demo: 1
+    tools:
+      - {name: get_profile, description: "Get visitor profile", requires_confirmation: false}
+      - {name: get_preferences, description: "Get visitor preferences", requires_confirmation: false}
+      - {name: get_notifications, description: "Get notification settings", requires_confirmation: false}
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Quickly show me my profile, my preferences, and my notification settings."}
+      - {kind: tool_result, last_call_name: get_profile, result: {name: "demo"}}
+      - {kind: tool_result, last_call_name: get_preferences, result: {theme: "dark"}}
+      - {kind: tool_result, last_call_name: get_notifications, result: {push: true}}
+
+  # ─── Guide mode scenarios ─────────────────────────────────────────
+  # Visitor explicitly picked "Guide me" at session start. The bot
+  # runs with ``mode=guide`` — no tools, no demonstrations, every
+  # user wake auto-fetches a screenshot and the LLM only inferences
+  # at screenshot_result. Output shape is just (speech, point_to).
+
+  - name: guide_mode_kickoff_greeting
+    mode: guide
+    rubric: |
+      Guide mode + kickoff — the visitor just opened the widget. The
+      agent should greet briefly (one or two sentences), match the
+      AI persona / software described in the static prefix, and emit
+      ONLY ``speech`` (the kickoff schema is speech-only in guide
+      mode, same as action mode). PASS if the greeting is concise
+      and there's no claim to "drive the software for you" or
+      similar action-mode phrasing — guide mode never executes
+      anything for the visitor.
+    tools: []
+    software_name: TestApp
+    turns:
+      - {kind: kickoff}
+
+  - name: guide_mode_pure_question_no_cursor
+    mode: guide
+    rubric: |
+      Visitor asked a pure product question that doesn't require
+      pointing anywhere ("What is this dashboard for?"). The agent
+      should answer based on the software TLDR / docs and set
+      ``point_to=null``. PASS if:
+        - speech is a direct, concise answer about the product,
+        - point_to is null (no on-screen target needed),
+        - the LLM does NOT claim to perform any action,
+        - is_message_relevant is "relevant" (the question was
+          clearly directed at the agent).
+      FAIL if the agent fabricates a coordinate just because point_to
+      is in the schema, or if it claims to do something on the
+      visitor's behalf.
+    tools: []
+    software_name: TestApp
+    software_tldr: "TestApp is a billing dashboard that helps small businesses track invoices, payments, and reminders."
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "What is this dashboard for?"}
+
+  - name: guide_mode_action_request_refusal
+    mode: guide
+    rubric: |
+      Visitor asked the agent to perform an action FOR them ("delete
+      task t-123 for me"). Guide mode CANNOT execute anything —
+      there are no tools registered. The agent should:
+        - refuse to perform the action (acknowledge it can't do it
+          for them in this mode),
+        - describe the steps the visitor should take themselves
+          (where to click, what to confirm), in plain natural
+          language,
+        - point_to is OPTIONAL — the visitor's screen content was
+          captured but we placeholder it in tests, so the LLM may
+          legitimately leave point_to=null and rely on prose to
+          guide. Either is fine.
+      PASS if the speech clearly conveys "I can't do this for you,
+      but here's how to do it yourself". FAIL if the agent claims
+      to have deleted the task, or pretends to invoke a tool.
+    tools: []
+    software_name: TestApp
+    software_tldr: "TestApp is a task-management dashboard. Tasks have a kebab menu next to each row that exposes Edit and Delete options."
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Delete task t-123 for me."}
+
+  - name: guide_mode_missing_feature_refusal
+    mode: guide
+    rubric: |
+      Visitor asked about a feature that doesn't exist in this
+      product per the TLDR ("how do I bulk delete tasks?").
+      The product description doesn't mention bulk delete. The
+      agent should:
+        - say honestly that it doesn't think the product has that
+          feature,
+        - frame it as "this product doesn't have it" (not a personal
+          rejection of the visitor),
+        - leave point_to=null (nothing to point at if the feature
+          isn't on the page),
+        - NOT invent UI to demonstrate the feature.
+      PASS if the agent's refusal is honest and product-grounded.
+      FAIL if it fabricates a "Bulk delete" button location, or
+      hallucinates a settings page that doesn't exist.
+    tools: []
+    software_name: TestApp
+    software_tldr: "TestApp is a simple task-management dashboard. Tasks can be created, edited (one at a time), and deleted (one at a time). There is no bulk action support."
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "How do I bulk delete tasks?"}
+
+  - name: guide_mode_off_topic_refusal
+    mode: guide
+    rubric: |
+      Visitor's mic picked up audio NOT directed at the agent ("yeah
+      grab me a coffee"). The agent should classify
+      is_message_relevant='off_topic' and speak a brief warm
+      acknowledgement (one short sentence) without taking any other
+      action. point_to MUST be null. PASS if off_topic is set and
+      the speech is a calm one-liner that signals "wasn't aimed at
+      me". FAIL if the agent silently emits speech="" (the
+      reminder in the prompt is explicit that off_topic should
+      still speak briefly).
+    tools: []
+    software_name: TestApp
+    software_tldr: "TestApp is a task-management dashboard."
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "no honey, we're not going to the park yet, you can play later"}
+
+  - name: guide_mode_multi_language_vietnamese
+    mode: guide
+    output_language: Vietnamese
+    language_code: vi
+    rubric: |
+      Guide mode with Vietnamese as the visitor's language. The
+      agent must respond entirely in Vietnamese — kickoff greeting,
+      and the answer to the visitor's question. PASS if every
+      speech in the rounds is in Vietnamese. FAIL if any speech
+      defaults to English. point_to may be null or set; either is
+      fine here — the rubric is grading language consistency.
+    tools: []
+    software_name: TestApp
+    software_tldr: "TestApp giúp các doanh nghiệp nhỏ quản lý hóa đơn và thanh toán."
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "Trang này dùng để làm gì vậy?"}
+
+  - name: guide_mode_screenshot_capture_failed_apology
+    mode: guide
+    rubric: |
+      Visitor asked a question that would benefit from looking at
+      their screen ("where do I click to add a new task?"), but
+      the screenshot fetch FAILED (capture_failed=true on the
+      screenshot_result frame). The agent should:
+        - apologise contextually in its own voice (not a canned
+          line) — referring back to what the visitor asked,
+        - either offer to try again, or ask the visitor to describe
+          what they're looking at,
+        - point_to MUST be null (no image → no coordinate).
+      PASS if the apology calls back the specific topic and offers
+      a recovery path. FAIL if the speech is generic ("Something
+      went wrong"), or if point_to is set (a hallucinated coord
+      since there's no image).
+    mode_extras:
+      screenshot_force_fail: true
+    tools: []
+    software_name: TestApp
+    software_tldr: "TestApp is a task-management dashboard."
+    turns:
+      - {kind: kickoff}
+      - {kind: user, text: "where do I click to add a new task?"}

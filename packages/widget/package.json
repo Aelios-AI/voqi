@@ -1,0 +1,27 @@
+{
+  "name": "voqi-widget",
+  "version": "0.1.0",
+  "description": "Voqi voice widget — drop-in voice control for any web app.",
+  "private": false,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@pipecat-ai/client-js": "^1.7.0",
+    "@pipecat-ai/client-react": "^1.1.0",
+    "@pipecat-ai/daily-transport": "^1.6.1",
+    "html2canvas-pro": "^2.0.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.17",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.5"
+  }
+}

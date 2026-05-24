@@ -1,0 +1,62 @@
+[project]
+name = "voqi-agent-server"
+version = "0.1.0"
+description = "Voqi voice agent server — runs the Pipecat-based agent that the Voqi widget connects to."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    # Pipecat with the providers the in-app loop uses: Daily transport
+    # (WebRTC), Deepgram, Cartesia TTS, OpenAI client, Silero VAD.
+    "pipecat-ai[cartesia,daily,deepgram,openai,runner,silero]",
+
+    # The agent loop runs through LangChain's `with_structured_output`
+    # against ChatOpenAI — see brain/agent_output.py for the
+    # unified schema that returns speech + tool_calls + turn-completeness.
+    "openai>=2.7.0",
+    "langchain-core>=1.2.1",
+    "langchain-openai>=0.3.0",
+    # Jinja2 owns the master system-prompt template.
+    "Jinja2>=3.1",
+    # Gemini for the LLM-based turn-stop strategy and conversation
+    # summarisation (separate, smaller call than main agent inference).
+    "langchain-google-genai>=4.0.0",
+
+    # Server plumbing.
+    "fastapi>=0.118.0",
+    "uvicorn>=0.39.0",
+    "aiohttp>=3.13.0",
+    "httpx[http2]>=0.28.1",
+    "python-dotenv>=1.2.0",
+    "loguru>=0.7.3",
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+]
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.404,<2",
+    "ruff>=0.12.11,<1",
+    "pytest>=9.0.2",
+    "pytest-asyncio>=0.24",
+    "pyyaml>=6.0",
+]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["I"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+# Default: deselect llm_judge scenarios (slow, billed). Override with
+# `pytest -m llm_judge` to run only those, or `pytest -m ""` for everything.
+addopts = "-m 'not llm_judge'"
+markers = [
+    "llm_judge: scenarios that hit the real OpenAI agent + a separate LLM judge (slow, billed). Run with `-m llm_judge`.",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
