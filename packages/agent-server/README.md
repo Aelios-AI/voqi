@@ -74,7 +74,7 @@ data channel.
 │   ├── languages.py                widget code → Deepgram `Language` enum + Cartesia TTS voice catalogue (drives the 37-language picker)
 │   ├── cartesia_tts.py             hardened Cartesia TTS service — skip-empty-text guard + reconnect-on-error
 │   ├── turn_start.py               user-turn-start strategy that drops to 1 word while the bot is mid-utterance (lets short interruptions register)
-│   ├── rtvi.py                     `CustomRTVIProcessor` — RTVI data-channel processor that tags every message with `client`/`bot` origin
+│   ├── rtvi.py                     `AdaptedRTVIProcessor` — RTVI data-channel processor that tags every message with `client`/`bot` origin
 │   └── frames.py                   bucket for custom pipeline frames (Pipecat frames flow between processors as the communication primitive); currently holds `SessionOpenFrame`
 │
 ├── tests/                          three-layer pytest suite — see [tests/README.md](tests/README.md)

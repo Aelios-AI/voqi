@@ -246,7 +246,7 @@ export class InAppTransport implements IInAppTransport {
             const msg = (data ?? {}) as { type?: string; from?: string };
             // Pipecat hands us the unwrapped server-message payload
             // directly — NOT an RTVIMessage wrapper. Bot stamps
-            // `from: "bot"` via CustomRTVIProcessor; ignore anything
+            // `from: "bot"` via AdaptedRTVIProcessor; ignore anything
             // not from the bot (own loopbacks).
             if (msg.from !== undefined && msg.from !== "bot") {
                 return;

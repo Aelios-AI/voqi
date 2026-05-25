@@ -144,8 +144,7 @@ tests green but make the agent's *answers* worse — only a real model
 will tell you.
 
 **Cost**: every test hits OpenAI. Each scenario averages 3-5 LLM
-calls + 1 judge call. Running the full suite is ~$1-2 per pass and
-takes a few minutes.
+calls + 1 judge call.
 
 **49 conversation scenarios (one parametrised function) + 2 standalone
 attention tests = 3 pytest functions total, opt-in only.** Run before

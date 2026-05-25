@@ -2,6 +2,15 @@
 
 **Make any web app voice-controllable in 37 languages in 5 minutes.**
 
+<a href="docs/assets/launch.mp4">
+  <img src="docs/assets/launch.jpg" alt="Watch the 60-second launch video" width="100%">
+</a>
+
+<!-- ↑ Cool thumbnail that links to the MP4 — works in every Markdown
+     renderer (GitHub, npm, PyPI, IDE previewers). Below: GitHub auto-
+     renders the raw MP4 URL as a native inline player. -->
+https://github.com/Aelios-AI/voqi/raw/main/docs/assets/launch.mp4
+
 Voqi is an open-source voice control layer for web apps. Drop in a
 widget, define a few tools, and your users can operate your software
 by talking to it — creating records, navigating screens, running queries, all hands-free.
