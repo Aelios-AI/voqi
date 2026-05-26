@@ -327,9 +327,18 @@ Bring-your-own-key. None of these are baked in:
 
 See [`packages/agent-server/.env.example`](packages/agent-server/.env.example).
 
-**Want a different STT/TTS provider?** All voice services are drop-in
+**Want a different LLM?** The agent server talks to LLMs through
+[LangChain](https://www.langchain.com/), so switching providers is a
+LangChain swap — Anthropic, Google, Mistral, Cohere, local models via
+Ollama / vLLM, anything LangChain supports. Two call sites:
+[`brain/processor.py`](packages/agent-server/brain/processor.py) for
+the main agent loop (currently `ChatOpenAI`) and
+[`brain/conversation_history.py`](packages/agent-server/brain/conversation_history.py)
+for the cheap summarizer (currently `ChatGoogleGenerativeAI`).
+
+**Want a different STT/TTS/Transport provider?** All voice services and the transport service are drop-in
 Pipecat adapters — swap them in `bot.py` and you can run on Whisper,
-ElevenLabs, Riva, AssemblyAI, etc. See the
+ElevenLabs, Riva, AssemblyAI, SmallWebRTC, etc. See the
 [Pipecat services docs](https://docs.pipecat.ai/).
 
 ---
