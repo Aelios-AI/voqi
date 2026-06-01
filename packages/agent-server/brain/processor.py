@@ -657,7 +657,11 @@ class InAppAgentProcessor(FrameProcessor):
                 self._kickoff_received_event.set()
             self._session_started = True
             self._last_heartbeat_time = time.time()
-            self._create_reply_watchdog()
+            # No reply watchdog on kickoff — the greeting is the
+            # session's first speech and a slow kickoff is preferable
+            # to the visitor hearing an apology before they've said
+            # anything. The watchdog gets created the moment a real
+            # user message arrives (see ``_handle_user_input``).
             self._enqueue(
                 priority=1,
                 frame=InAppMessageFrame(
