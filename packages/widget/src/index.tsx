@@ -49,6 +49,35 @@ let mounted: MountedState | null = null;
 let userConfig: VoqiUserConfig | null = null;
 const ROOT_DATASET_KEY = "voqiHost";
 
+// Voqi is desktop-only today (small touch viewports make the pill
+// useless and the cursor/screenshot model assumes a pointer device).
+// Anything narrower than this is treated as mobile: mount is skipped,
+// and a live session is torn down if the viewport shrinks past it.
+// When the viewport returns to desktop size, the widget re-mounts
+// with the same options the consumer originally asked for.
+const MIN_DESKTOP_WIDTH_PX = 768;
+const RESIZE_DEBOUNCE_MS = 200;
+
+// Remembered intent across viewport changes:
+// - ``wantedToMount`` is set whenever the consumer (auto-mount or a
+//   programmatic ``Voqi.mount(...)``) asked for a widget, regardless
+//   of whether the mount actually proceeded. The resize handler uses
+//   this to know whether to re-mount on the desktop transition.
+// - ``lastMountOpts`` holds the most recent options so the re-mount
+//   is faithful to what was originally requested (mock mode, custom
+//   container, etc.).
+// - ``Voqi.unmount()`` clears ``wantedToMount`` (an explicit teardown
+//   stays torn down); the resize handler uses ``tearDownInternal()``
+//   which preserves the intent.
+let wantedToMount = false;
+let lastMountOpts: VoqiMountOptions = {};
+let resizeDebounce: ReturnType<typeof setTimeout> | null = null;
+
+function isMobileViewport(): boolean {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth < MIN_DESKTOP_WIDTH_PX;
+}
+
 function findScriptTag(): HTMLScriptElement | null {
     const all = Array.from(
         document.querySelectorAll(
@@ -79,7 +108,21 @@ function configure(config: VoqiUserConfig): void {
 
 function mount(opts: VoqiMountOptions = {}): void {
     console.info("[Voqi] mount() called", { opts, alreadyMounted: !!mounted });
+    // Record intent regardless of whether the mount proceeds — the
+    // resize handler reads this to decide whether to bring the widget
+    // back when the viewport returns to desktop size.
+    wantedToMount = true;
+    lastMountOpts = opts;
+
     if (mounted) return;
+
+    if (isMobileViewport()) {
+        console.info(
+            `[Voqi] mobile viewport detected (<${MIN_DESKTOP_WIDTH_PX}px) — ` +
+                "widget will mount when the viewport reaches desktop size.",
+        );
+        return;
+    }
 
     const scriptTag = findScriptTag();
     const mockMode = resolveMockMode(scriptTag, opts.mock);
@@ -171,7 +214,7 @@ function mount(opts: VoqiMountOptions = {}): void {
     };
 }
 
-function unmount(): void {
+function tearDownInternal(): void {
     if (!mounted) return;
     try {
         mounted.root.unmount();
@@ -182,6 +225,13 @@ function unmount(): void {
         mounted.container.remove();
     }
     mounted = null;
+}
+
+function unmount(): void {
+    // Explicit consumer unmount clears the mount intent so a subsequent
+    // viewport-resize back to desktop does NOT re-summon the widget.
+    wantedToMount = false;
+    tearDownInternal();
 }
 
 const api: Voqi = {
@@ -227,6 +277,38 @@ if (autoMount) {
     } else {
         mount();
     }
+}
+
+// Bidirectional viewport tracking:
+//   * desktop -> mobile while mounted: tear down (drops the live
+//     WebRTC session) but keep the consumer's mount intent so the
+//     widget comes back automatically the moment the viewport is
+//     desktop-sized again.
+//   * mobile -> desktop while not mounted but intent is still set
+//     (auto-mount fired on a mobile load, or a previous resize tore
+//     it down): re-mount with the originally requested options.
+// Debounced because drag-resize / devtools toggle fire `resize` many
+// times per second; mount/unmount thrash would be terrible.
+if (typeof window !== "undefined") {
+    window.addEventListener("resize", () => {
+        if (resizeDebounce !== null) clearTimeout(resizeDebounce);
+        resizeDebounce = setTimeout(() => {
+            resizeDebounce = null;
+            const mobile = isMobileViewport();
+            if (mobile && mounted) {
+                console.info(
+                    "[Voqi] viewport shrank below desktop threshold — " +
+                        "tearing down widget; will re-mount when desktop-sized.",
+                );
+                tearDownInternal();
+            } else if (!mobile && !mounted && wantedToMount) {
+                console.info(
+                    "[Voqi] viewport returned to desktop size — re-mounting widget.",
+                );
+                mount(lastMountOpts);
+            }
+        }, RESIZE_DEBOUNCE_MS);
+    });
 }
 
 export default api;

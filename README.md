@@ -28,6 +28,11 @@ No backend. No SaaS sign-up. You run the agent server yourself, define
 tools in your app code, and the voice loop runs locally. Bring your
 own API keys for OpenAI, Daily, Deepgram, Cartesia.
 
+> **Desktop only today.** The widget refuses to mount on viewports
+> narrower than 768px and tears down any live session if the window
+> shrinks below that threshold. Mobile support is on the
+> [roadmap](ROADMAP.md).
+
 > **Looking for production scale?** The managed version is
 > [Aelios AI](https://aeliosai.com) — autoscaling, multi-tenant
 > agents, hosted control plane, continuous-learning loops, and a
