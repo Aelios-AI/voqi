@@ -325,7 +325,7 @@ Bring-your-own-key. None of these are baked in:
 | Provider | What for | Required |
 |---|---|---|
 | [OpenAI](https://platform.openai.com/) | Main LLM | yes |
-| [Daily](https://daily.co) | WebRTC transport | yes (free tier covers dev) |
+| [Daily](https://dashboard.daily.co/) | WebRTC transport | yes (free tier covers dev) |
 | [Deepgram](https://deepgram.com) | Speech-to-text — Nova-3 covers all 37 languages | yes |
 | [Cartesia](https://cartesia.ai) | Agent's voice (text-to-speech) | yes |
 | [Google AI Studio](https://aistudio.google.com) | Gemini — conversation-history summarisation | yes |

@@ -87,37 +87,9 @@ async def test_tool_calls_allowed_on_tool_batch_completed_wake(harness_with_tool
     assert sum(1 for k, _ in h.batch_events if k == "dispatch") == 2
 
 
-async def test_tool_calls_allowed_on_user_wake_with_start_new(harness_with_tools):
-    h = harness_with_tools
-    h.script_llm_outputs(
-        [
-            {
-                "user_turn_status": "complete",
-                "speech": "ok",
-                "demonstration_action": "start_new",
-                "demonstration_name": "demo",
-                "tool_invocations": [{"name": "list_tasks", "arguments": {}}],
-            }
-        ]
-    )
-    await h.send_user("show me")
-    h.assert_in_flight(expected_size=1)
-
-
-async def test_schema_hides_tool_calls_when_no_tools_registered(harness):
-    """Smoke: with the no-tools harness, the LLM's wrapped schema MUST
-    NOT include tool_calls anywhere."""
-    h = harness
-    h.script_llm_outputs(
-        [
-            {
-                "user_turn_status": "complete",
-                "speech": "hello",
-                "demonstration_action": "continue",
-                "demonstration_name": None,
-            }
-        ]
-    )
-    await h.send_user("hi")
-    wrapped = h.llm.structured_views[0].schema
-    assert "tool_calls" not in wrapped["parameters"]["properties"]
+# The positive path (user wake + start_new with tools → dispatch) is
+# covered by test_demo_lifecycle.test_first_user_request_starts_demo_
+# and_dispatches_batch. Schema-shape-when-no-tools is covered by
+# layer1_unit/test_schema.test_tool_calls_hidden_when_no_tools_registered.
+# Both were duplicated here previously — removed to keep this file
+# focused on the *guard* behaviour the two-trigger rule actually owns.

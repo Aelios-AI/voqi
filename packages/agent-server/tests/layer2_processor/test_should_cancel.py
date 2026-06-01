@@ -46,19 +46,8 @@ async def test_cancel_pump_task_sets_then_clears_flag(harness_with_tools):
     assert h.processor._cancelling_current_response_generation is False
 
 
-async def test_clean_round_unaffected_by_cancelling_flag_default(harness_with_tools):
-    h = harness_with_tools
-    assert h.processor._cancelling_current_response_generation is False
-    h.script_llm_outputs(
-        [
-            {
-                "user_turn_status": "complete",
-                "speech": "ok",
-                "demonstration_action": "continue",
-                "demonstration_name": None,
-                "tool_invocations": [],
-            }
-        ]
-    )
-    await h.send_user("hi")
-    assert h.assistant_speech_history[-1]["content"] == "ok"
+# The "flag defaults to False so clean rounds aren't affected" case was
+# previously a round-trip test (script "ok", assert "ok"). It only
+# verified the fake, not the cancellation logic. The real backstop
+# behaviour is covered by `test_cancelling_flag_makes_round_raise_
+# cancelled_error` above.

@@ -27,6 +27,9 @@ import type {
 declare global {
     interface Window {
         VoqiReady?: Array<(api: VoqiApi) => void>;
+        // Bridged by <NavBridge> in App.tsx so this module (which lives
+        // outside React) can drive react-router programmatically.
+        __trackerNavigate?: (path: string) => void;
     }
 }
 
@@ -138,6 +141,64 @@ window.VoqiReady.push((Voqi) => {
     });
 
     const s = () => useStore.getState();
+
+    // ── Navigation ───────────────────────────────────────────────────
+    // Map friendly page keys (what the visitor says aloud, what the
+    // sidebar labels show) to the actual react-router routes.
+    const PAGE_ROUTES: Record<string, string> = {
+        dashboard: "/",
+        board: "/board",
+        list: "/list",
+        inbox: "/inbox",
+        sprints: "/sprints",
+        team: "/team",
+        settings: "/settings",
+    };
+
+    Voqi.defineTool({
+        name: "navigate_to_page",
+        description:
+            "Move the visitor to a different page of the tracker. " +
+            "Use when the visitor asks to 'go to', 'open', 'show me', " +
+            "or 'take me to' a page by name — Dashboard (the overview), " +
+            "Board (kanban), List (task list), Inbox, Sprints, Team " +
+            "(members), or Settings. Returns the new path on success.",
+        parameters: {
+            type: "object",
+            properties: {
+                page: {
+                    type: "string",
+                    enum: Object.keys(PAGE_ROUTES),
+                    description:
+                        "Page key. dashboard = overview, board = kanban, " +
+                        "list = task list, inbox = inbox, sprints = sprint " +
+                        "planning, team = members, settings = workspace settings.",
+                },
+            },
+            required: ["page"],
+        },
+        execute: async (args) => {
+            const page = String(args.page ?? "").toLowerCase();
+            const route = PAGE_ROUTES[page];
+            if (!route) {
+                return {
+                    error: `Unknown page '${page}'. Choose from: ${Object.keys(
+                        PAGE_ROUTES,
+                    ).join(", ")}.`,
+                };
+            }
+            const nav = window.__trackerNavigate;
+            if (!nav) {
+                return {
+                    error:
+                        "Navigation bridge not ready — the host React tree " +
+                        "may still be mounting. Try again in a moment.",
+                };
+            }
+            nav(route);
+            return { ok: true, page, route };
+        },
+    });
 
     // ── Tasks: read-only ─────────────────────────────────────────────
     Voqi.defineTool({

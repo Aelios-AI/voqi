@@ -179,14 +179,27 @@ Respond with JSON only:
 def _build_messages_payload(
     *, master_prompt: str, scenario_name: str, rubric: str, turns: list[dict]
 ) -> list[dict]:
+    # Per-turn state-context truncation: the rendered state context can
+    # grow past 4k chars on multi-batch demos where every prior batch
+    # carries its results inline. Truncating too aggressively used to
+    # hide details the rubric needed (e.g. "agent should have noticed
+    # REL-42 was already completed"); 4000 chars holds 3-4 batches of
+    # typical density without blowing the judge's context budget.
+    STATE_CONTEXT_CAP = 4000
     rendered_turns = []
     for i, t in enumerate(turns, start=1):
+        ctx = t.get("state_context", "(omitted)")
+        truncated = (
+            ctx[:STATE_CONTEXT_CAP] + "\n…[truncated]"
+            if len(ctx) > STATE_CONTEXT_CAP
+            else ctx
+        )
         rendered_turns.append(
             f"--- Turn {i} ---\n"
             f"Wake mode: {t.get('wake_mode', '(unknown)')}\n"
             f"Batch state at turn start: {t.get('batch_state', '(unknown)')}\n"
             f"User input (or wake reason): {t.get('user_input', '(no user input)')}\n"
-            f"State context the agent saw: {t.get('state_context', '(omitted)')[:1500]}\n"
+            f"State context the agent saw: {truncated}\n"
             f"Agent output: {json.dumps(t.get('output', {}), indent=2)}"
         )
     rendered = "\n\n".join(rendered_turns)

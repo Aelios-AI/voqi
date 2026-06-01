@@ -266,6 +266,7 @@ async def run_in_app_bot(runner_args: DailyRunnerArguments):
                 )
                 turn_detection_enabled = False
             if turn_detection_enabled:
+                logger.info(f"[voqi] turn detection enabled — using SmartTurn analyzer")
                 turn_stop_strategy = [
                     TurnAnalyzerUserTurnStopStrategy(
                         turn_analyzer=LocalSmartTurnAnalyzerV3(
@@ -273,8 +274,9 @@ async def run_in_app_bot(runner_args: DailyRunnerArguments):
                         ),
                     ),
                 ]
-                vad_stop_secs = 0.6
+                vad_stop_secs = 0.2
             else:
+                logger.info(f"[voqi] turn detection disabled — using VAD-only strategy")
                 turn_stop_strategy = None
                 vad_stop_secs = 0.8
 
@@ -320,7 +322,6 @@ async def run_in_app_bot(runner_args: DailyRunnerArguments):
             # toward product names / jargon from voqi.config.yaml.
             speech_to_text = DeepgramSTTService(
                 api_key=os.getenv("DEEPGRAM_API_KEY"),
-                ttfs_p99_latency=0.716,
                 settings=DeepgramSTTService.Settings(
                     language=get_deepgram_stt_language(chosen_language_code),
                     keyterm=speech_keywords,

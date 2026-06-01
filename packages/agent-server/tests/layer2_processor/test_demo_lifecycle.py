@@ -181,9 +181,7 @@ async def test_start_new_mid_demo_cancels_prior(harness_with_tools):
     assert [name for _, _, name in starts] == ["browse", "create"]
 
 
-async def test_no_active_demo_state_context_message(harness_with_tools):
-    """Sanity: state-context block surfaces a no-demo header when
-    nothing is active."""
-    h = harness_with_tools
-    msg = h.processor._build_state_context_message()
-    assert "No active demonstration" in msg
+# The "no-demo state context says 'No active demonstration'" sanity is
+# covered by test_state_context_sections.test_no_demo_no_history_block,
+# which checks the same render path plus the absence of the batch-
+# history section.

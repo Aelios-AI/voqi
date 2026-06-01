@@ -87,21 +87,33 @@ async def test_send_text_message_interrupts_and_enqueues_text(harness_with_tools
             }
         ]
     )
-    # Pre-load some stale state to ensure interruption cleared things.
-    h.processor._enqueue(
-        priority=3,
-        frame=InAppMessageFrame(
-            message="",
-            message_type=MessageType.TOOL_BATCH_COMPLETED,
-            put_back_when_interrupted=False,
-            demonstration_id="ghost",
-            data={"batch_id": "ghost-b", "size": 0},
-        ),
+    # Pre-load a stale put_back=False frame. The text-message
+    # interruption must drop it before processing the new text wake.
+    ghost = InAppMessageFrame(
+        message="",
+        message_type=MessageType.TOOL_BATCH_COMPLETED,
+        put_back_when_interrupted=False,
+        demonstration_id="ghost",
+        data={"batch_id": "ghost-b", "size": 0},
     )
+    h.processor._enqueue(priority=3, frame=ghost)
+
     await h.send_text_message("hello there")
+
+    # The new text turn produced the scripted reply.
     last = h.assistant_speech_history[-1]
     assert last["role"] == "assistant"
     assert "got your typed input" in last["content"]
+    # The pre-loaded stale frame was dropped by the interruption — it
+    # never made it onto the pump path. Drain whatever's currently on
+    # the queue and verify the ghost is not among the remaining items.
+    remaining_frames = []
+    while not h.processor._wake_queue.empty():
+        remaining_frames.append(h.processor._wake_queue.get_nowait().frame)
+    assert ghost not in remaining_frames, (
+        "stale put_back=False TOOL_BATCH_COMPLETED frame should have been "
+        "dropped by send_text_message's interruption, but it survived"
+    )
 
 
 async def test_processing_resumes_after_interruption(harness_with_tools):

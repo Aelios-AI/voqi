@@ -120,7 +120,40 @@ can't catch these because they require multiple rounds of interaction.
 Layer 3 can catch them but is slow and noisy — the deterministic
 scripted LLM lets you assert exact behaviour.
 
-**~140 tests, runs in ~5 seconds.**
+**~130 tests, runs in ~5 seconds.**
+
+### The bar for a layer-2 test
+
+Scripting the LLM is only useful when the assertion proves the
+**processor** did the right thing in response. A test that scripts X
+and then asserts X landed has only proven that `FakeChatOpenAI` echoes
+its input — it doesn't exercise any processor logic.
+
+Two failure modes to avoid:
+
+1. **Round-trip echo.** Scripting `speech: "Sure thing."` and then
+   asserting `"Sure thing."` reached the transcript proves nothing.
+   The positive-path "happy round" is covered once in `test_smoke.py`
+   and in the lifecycle tests; don't re-add it elsewhere.
+
+2. **Empty-input tautology.** Suppression branches (off-topic,
+   incomplete, kickoff, end_current with stray tools, two-trigger
+   violations) need to be tested by scripting **non-empty** speech +
+   tools alongside the gating condition and verifying that the
+   processor **dropped** them. Scripting empty speech and asserting
+   the history stays empty is tautological — empty in trivially
+   produces empty out.
+
+Good examples to imitate:
+
+- `test_pending_continue_with_invocations_and_no_resolution_discards`
+  in `test_pending_confirmation.py` — scripts a corrupt LLM output
+  combo, asserts the two-trigger guard discards the spurious tools.
+- `test_screenshot_result_round_can_dispatch_tools_via_start_new` in
+  `test_screenshot_capture.py` — explicit regression guard with a
+  comment naming the bug it caught.
+- The four `test_guard_*` tests in `test_stale_results.py` — each one
+  exercises a distinct branch of `_on_tool_outcome`.
 
 ## Layer 3 — real LLM tests
 
@@ -133,18 +166,35 @@ by a separate "judge" LLM against a rubric.
 | `test_screenshot_attention.py` | When the agent requests a screenshot, did it actually use the visual info in its reply (vs ignoring it)? |
 | `test_guide_point_to_attention.py` | Guide-mode pointing — does the agent point to the *right* element on the page? |
 
-The judge is a separate `ChatOpenAI` instance with a strict rubric
-prompt. It returns `pass / fail / partial` plus a free-text reason —
-the test fails on `fail` and prints the reason. See
-`tests/harness/llm_judge.py` for the rubric DSL.
+The judge is a **separate LLM from a different family** (Claude by
+default, when `ANTHROPIC_API_KEY` is set; falls back to GPT if not) so
+it isn't biased by its own prior choices. It receives:
+
+- The agent's master system prompt
+- The scenario's rubric (natural-language pass/fail criteria from
+  `rubrics.yaml`)
+- A turn-by-turn record: for each round, the `wake_mode`,
+  `batch_state`, `user_input`, the per-round state-context block
+  (capped at 4000 chars), and the agent's full structured output
+  (every Pydantic field the LLM emitted, dumped via
+  `model_dump_json(exclude_unset=True)`)
+- A long `JUDGE_SYSTEM_PROMPT` codifying the contract — per-wake
+  schema gating, two-trigger rule, parallel-batch rule, pending-
+  confirmation semantics, refusal style
+
+It returns `{passed: bool, reason: str, per_turn: [...]}`. The test
+fails on `passed: false` and prints the reason. See
+[`tests/harness/llm_judge.py`](harness/llm_judge.py) for the full
+contract prompt.
 
 **Why this layer exists**: catches prompt-quality regressions that
 type-level tests will miss. A schema change might keep all layer-2
 tests green but make the agent's *answers* worse — only a real model
 will tell you.
 
-**Cost**: every test hits OpenAI. Each scenario averages 3-5 LLM
-calls + 1 judge call.
+**Cost**: every scenario hits OpenAI for the agent (multi-turn) plus
+one Anthropic call for the judge. ~$0.05-0.20 per scenario depending
+on length; the full 49-scenario run is roughly $3-8.
 
 **49 conversation scenarios (one parametrised function) + 2 standalone
 attention tests = 3 pytest functions total, opt-in only.** Run before
@@ -196,13 +246,13 @@ async def test_my_scenario(harness):
     assert [tc["name"] for tc in batch["tool_calls"]] == ["create_task"]
 ```
 
-See any file in `layer2_processor/` for richer examples — especially
-`test_smoke.py` for the happy path and
-`test_two_trigger_rule.py` for a non-trivial assertion pattern. The
-full harness surface (`script_llm_outputs`, `send_user`,
-`send_text_message`, `send_kickoff`, `deliver_tool_result`,
-`pump_until_idle`, `set_timeouts`, the `assert_*` helpers, etc.) is
-defined in [`harness/processor_harness.py`](harness/processor_harness.py).
+See `test_pending_confirmation.py` or `test_stale_results.py` for the
+strongest patterns — each test scripts a plausible LLM mistake and
+asserts the processor's defence. The full harness surface
+(`script_llm_outputs`, `send_user`, `send_text_message`,
+`send_kickoff`, `deliver_tool_result`, `pump_until_idle`,
+`set_timeouts`, the `assert_*` helpers, etc.) is defined in
+[`harness/processor_harness.py`](harness/processor_harness.py).
 
 ## Module-level constants
 
@@ -215,10 +265,22 @@ snapshots and restores these between tests so per-test overrides via
 ## Layer 3 setup
 
 ```bash
-export OPENAI_API_KEY=sk-real-...           # required, NOT the stub
+export OPENAI_API_KEY=sk-real-...           # required for the agent — NOT the stub
 export GOOGLE_API_KEY=...                   # required for conversation-history summarisation
+export ANTHROPIC_API_KEY=sk-ant-...         # recommended for the judge (different-family grader)
 uv run pytest -m llm_judge
 ```
 
 Layer 3 self-skips when `OPENAI_API_KEY` is missing or starts with
-`sk-test-`. The skip message points you at this README.
+`sk-test-`. If `ANTHROPIC_API_KEY` is unset, the judge falls back to
+GPT — which works but loses the cross-family neutrality, so prefer
+running with Anthropic credentials when judging anything subjective.
+
+### Layer 3 environment knobs
+
+- `LAYER3_PARALLELISM` (default `10`) — number of scenarios to run
+  concurrently in each `asyncio.gather` chunk.
+- `LAYER3_SCENARIOS=name1,name2` — filter to a subset of scenarios from
+  `rubrics.yaml` by name. Useful when iterating on one rubric.
+- `IN_APP_LLM_MODEL_FOR_TESTS` — override the OpenAI model the agent
+  uses for layer 3 (default `gpt-5.4`).

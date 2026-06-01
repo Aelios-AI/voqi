@@ -1,0 +1,90 @@
+name: Bug report
+description: Report something that isn't working as expected.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report. Please fill in
+        the sections below — the more specific you are, the faster we
+        can help.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug. Include logs or
+        screenshots if you have them.
+      placeholder: When I do X, Y happens instead of Z.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps that reliably trigger the bug.
+      placeholder: |
+        1. Clone the repo
+        2. Run `uv run python server.py`
+        3. Open the example app
+        4. Click the launcher
+        5. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen instead?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Which part of Voqi is affected?
+      options:
+        - Widget (browser)
+        - Agent server (Python)
+        - Example app
+        - Docs
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Voqi commit / version
+      description: Output of `git rev-parse --short HEAD` or the release
+        tag you're on.
+      placeholder: e.g. a1b2c3d
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, browser (for widget bugs), Python version (for
+        server bugs), node version, anything else relevant.
+      placeholder: |
+        - OS: macOS 14.5
+        - Browser: Chrome 128
+        - Python: 3.12
+        - Node: 20.18
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Paste any relevant console output, server logs, or
+        stack traces. Use code fences for readability.
+      render: shell
+    validations:
+      required: false

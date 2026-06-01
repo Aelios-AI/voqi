@@ -426,16 +426,13 @@ async def test_tool_batch_completed_with_armed_timer_cancels_defensively(
 
     await h.deliver_tool_result(call_id=cid, result=[])
     # Guard tripped: the corrupt timer was cancelled before the
-    # tool_batch_completed round ran. After the round, a fresh timer
-    # may legitimately arm (state went idle), but the original task
-    # must be done.
-    # Either it's None (cleared) or done (cancelled) — never the same
-    # live task that was forced earlier.
+    # tool_batch_completed round ran. After the round a legitimate fresh
+    # timer may have armed (state went idle), but the original forced
+    # task must no longer be the live one.
     armed_now = h.processor._idle_warning_task
-    assert armed_now is None or armed_now.done() or armed_now is not None  # tautology — see below
-    # The legitimate post-round arm may have replaced it; verify we're
-    # not holding the corrupt task anymore.
-    assert (armed_now is None) or armed_now.get_name() == "in-app-idle-warning"
+    assert armed_now is None or armed_now.get_name() == "in-app-idle-warning", (
+        "guard did not clear the corrupt timer before running the round"
+    )
 
 
 # ── INTERRUPTION DOES NOT CANCEL ──────────────────────────────────────
@@ -499,15 +496,10 @@ async def test_schema_exposes_idle_warning_resolution_when_stage_two_armed(
         h.processor._idle_end_task = None
 
 
-async def test_canned_goodbye_key_resolves_in_all_languages():
-    """Lock the new key into the multilingual catalog so a future
-    translation regression fails loud."""
-    from brain.canned_speech import _TRANSLATIONS
-
-    bundle = _TRANSLATIONS[CannedKey.SESSION_IDLE_GOODBYE]
-    assert "en" in bundle
-    # 23 supported languages parity with the rest of the catalog.
-    assert len(bundle) >= 20
+# Multilingual translation coverage for every CannedKey (including
+# SESSION_IDLE_GOODBYE) is parameterised over all keys in
+# layer1_unit/test_canned_speech.test_every_key_has_full_translation_set
+# and test_every_translation_non_empty. No need to re-assert here.
 
 
 # ── WARNING IS CANNED, NOT INFERENCE ─────────────────────────────────

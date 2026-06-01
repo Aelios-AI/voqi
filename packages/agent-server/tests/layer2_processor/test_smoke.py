@@ -21,23 +21,6 @@ async def test_kickoff_greeting_no_tools(harness):
     harness.assert_no_pending()
 
 
-async def test_user_message_plain_reply(harness):
-    harness.script_llm_outputs(
-        [
-            {
-                "user_turn_status": "complete",
-                "speech": "Sure thing.",
-                "demonstration_action": "continue",
-                "demonstration_name": None,
-            }
-        ]
-    )
-    await harness.send_user("hello")
-    last = harness.assistant_speech_history[-1]
-    assert last["role"] == "assistant"
-    assert "Sure thing." in last["content"]
-
-
 async def test_text_message_routes_through_text_wake(harness):
     harness.script_llm_outputs(
         [

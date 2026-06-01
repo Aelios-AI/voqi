@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
 import { Sidebar } from "./components/Sidebar";
 import { Topbar } from "./components/Topbar";
 import { TaskDrawer } from "./components/TaskDrawer";
@@ -13,6 +13,20 @@ import { Team } from "./pages/Team";
 import { Inbox } from "./pages/Inbox";
 import { Settings } from "./pages/Settings";
 import { installExampleApi } from "./api/exampleActions";
+
+// Exposes react-router's `navigate` to the Voqi adapter, which runs
+// outside React (in voqi.ts) and therefore cannot call useNavigate()
+// directly. The navigate_to_page tool reads off this global.
+function NavBridge() {
+    const navigate = useNavigate();
+    useEffect(() => {
+        window.__trackerNavigate = (path: string) => navigate(path);
+        return () => {
+            delete window.__trackerNavigate;
+        };
+    }, [navigate]);
+    return null;
+}
 
 function Shell() {
     useEffect(() => {
@@ -46,6 +60,7 @@ function Shell() {
 export default function App() {
     return (
         <BrowserRouter>
+            <NavBridge />
             <Shell />
         </BrowserRouter>
     );

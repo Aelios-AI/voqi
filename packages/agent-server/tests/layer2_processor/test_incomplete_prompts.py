@@ -14,47 +14,73 @@ trails off, we just leave it; they can resume on their own."""
 from __future__ import annotations
 
 
-async def test_incomplete_short_suppresses_reply(harness_with_tools):
+async def test_incomplete_short_speaks_nudge_but_drops_actions(
+    harness_with_tools,
+):
+    """When the LLM classifies a turn `incomplete_short`, its speech IS
+    preserved (acts as a "still listening" nudge), but every side-effect
+    field — tool_invocations, demonstration_action, demonstration_name
+    — must be dropped. The LLM may emit them anyway on a misclassified
+    round; the processor's job is to honour the classification by
+    suppressing the actions while letting the warm nudge through."""
     h = harness_with_tools
     h.script_llm_outputs(
         [
             {
                 "is_message_relevant": "relevant",
                 "user_turn_status": "incomplete_short",
-                "speech": "",
-                "demonstration_action": "continue",
-                "demonstration_name": None,
-                "tool_invocations": [],
+                "speech": "Sure, listing your tasks now — one sec.",
+                # Side-effects below MUST all be dropped.
+                "demonstration_action": "start_new",
+                "demonstration_name": "list-them",
+                "tool_invocations": [{"name": "list_tasks", "arguments": {}}],
             }
         ]
     )
     await h.send_user("and then I was thinking…")
-    # No speech pushed — incomplete classifications stay quiet.
-    assert not h.assistant_speech_history
-    # No tool dispatch.
+    # Speech preserved — it's the visitor-facing nudge.
+    assert any(
+        s["role"] == "assistant" and "listing your tasks" in s["content"]
+        for s in h.assistant_speech_history
+    )
+    # The tool invocations were dropped — no dispatch.
     assert sum(1 for k, _ in h.batch_events if k == "dispatch") == 0
-    # No active demo, in-flight, or pending state.
+    # demonstration_action='start_new' was ignored — no demo was created.
     h.assert_no_active_demo()
     h.assert_no_in_flight()
 
 
-async def test_incomplete_long_suppresses_reply(harness_with_tools):
+async def test_incomplete_long_speaks_nudge_but_drops_actions(
+    harness_with_tools,
+):
+    """Same defence as `incomplete_short` for the `incomplete_long`
+    branch. The two enum values share a code path; the pair pins that
+    the branch handles both. Both script non-empty speech + a
+    side-effect bundle so the assertions prove the right behaviour:
+    speech through, actions dropped."""
     h = harness_with_tools
     h.script_llm_outputs(
         [
             {
                 "is_message_relevant": "relevant",
                 "user_turn_status": "incomplete_long",
-                "speech": "",
-                "demonstration_action": "continue",
-                "demonstration_name": None,
-                "tool_invocations": [],
+                "speech": "I'll go ahead and delete that for you.",
+                "demonstration_action": "start_new",
+                "demonstration_name": "delete-it",
+                "tool_invocations": [
+                    {"name": "delete_task", "arguments": {"id": "p1"}}
+                ],
             }
         ]
     )
-    await h.send_user("hmm…")
-    assert not h.assistant_speech_history
+    await h.send_user("hmm so I was wondering if we could…")
+    assert any(
+        s["role"] == "assistant" and "delete that" in s["content"]
+        for s in h.assistant_speech_history
+    )
+    assert sum(1 for k, _ in h.batch_events if k == "dispatch") == 0
     h.assert_no_active_demo()
+    h.assert_no_in_flight()
 
 
 async def test_incomplete_voice_does_not_count_as_valid_for_idle_timer(
@@ -89,36 +115,10 @@ async def test_incomplete_voice_does_not_count_as_valid_for_idle_timer(
     assert not pre_task.done()
 
 
-async def test_text_wake_schema_does_not_include_user_turn_status(harness_with_tools):
-    """Text wakes are always complete by construction; the
-    user_turn_status field doesn't apply, schema must omit it."""
-    h = harness_with_tools
-    h.script_llm_outputs(
-        [
-            {
-                "speech": "ok",
-                "demonstration_action": "continue",
-                "demonstration_name": None,
-                "tool_invocations": [],
-            }
-        ]
-    )
-    await h.send_text_message("typed input")
-    wrapped = h.llm.structured_views[0].schema
-    assert "user_turn_status" not in wrapped["parameters"]["properties"]
-
-
-async def test_incomplete_classification_still_in_voice_schema(harness_with_tools):
-    """Classification itself is preserved — the schema for voice
-    wakes still requires user_turn_status. Only the post-classification
-    follow-up timer was removed."""
-    from brain.agent_output import build_in_app_schema
-
-    h = harness_with_tools
-    s = build_in_app_schema(
-        wake_mode="user_voice", batch_state="idle", tools=h.config.tools,
-    )
-    assert "user_turn_status" in s["properties"]
-    assert "user_turn_status" in s["required"]
-    enum = s["properties"]["user_turn_status"]["enum"]
-    assert sorted(enum) == sorted(["complete", "incomplete_short", "incomplete_long"])
+# Schema shape for user_turn_status (present on voice, absent on text,
+# enum values) is covered by:
+#   - layer1_unit/test_schema.test_user_turn_status_present_only_on_user_voice
+#   - layer1_unit/test_schema.test_user_turn_status_absent_on_other_wakes
+# Two earlier tests here re-asserted those properties via the harness;
+# removed because they duplicated layer-1 coverage without exercising
+# any processor state.

@@ -41,19 +41,7 @@ async def test_start_new_on_tool_batch_completed_is_coerced(harness_with_tools):
     assert [name for _, _, name in starts] == ["first"]
 
 
-async def test_valid_action_passes_through(harness_with_tools):
-    """Valid (wake, action) pair: backstop never trips."""
-    h = harness_with_tools
-    h.script_llm_outputs(
-        [
-            {
-                "user_turn_status": "complete",
-                "speech": "go",
-                "demonstration_action": "start_new",
-                "demonstration_name": "x",
-                "tool_invocations": [{"name": "list_tasks", "arguments": {}}],
-            }
-        ]
-    )
-    await h.send_user("go")
-    h.assert_active_demo(name="x")
+# The positive-path "valid action passes through" assertion is covered
+# by test_demo_lifecycle.test_first_user_request_starts_demo_and_
+# dispatches_batch (which makes the same assertion as a side effect of
+# the lifecycle scenario it's actually testing).

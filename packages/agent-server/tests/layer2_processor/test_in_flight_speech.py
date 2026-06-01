@@ -65,23 +65,10 @@ async def test_clear_interrupt_triggers_start_new(harness_with_tools):
     assert sum(1 for k, _ in h.batch_events if k == "dispatch") == 2
 
 
-async def test_chitchat_during_in_flight_does_not_dispatch(harness_with_tools):
-    h = harness_with_tools
-    await _start_demo_with_in_flight_batch(h)
-    h.script_llm_outputs(
-        [
-            {
-                "user_turn_status": "complete",
-                "speech": "I'm Voqi — happy to help.",
-                "demonstration_action": "continue",
-                "demonstration_name": None,
-                "tool_invocations": [],
-            }
-        ]
-    )
-    await h.send_user("by the way what's your name?")
-    h.assert_in_flight()
-    assert sum(1 for k, _ in h.batch_events if k == "dispatch") == 1
+# The "chit-chat during in-flight → no dispatch" case is the same code
+# path as `test_ambiguous_interrupt_keeps_batch_running` (both:
+# continue + no tools + speech-only → no second dispatch). Removed to
+# avoid a same-file duplicate.
 
 
 async def test_in_flight_state_context_includes_batch_purpose_guidance(
