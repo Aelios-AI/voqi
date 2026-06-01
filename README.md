@@ -2,6 +2,8 @@
 
 **Make any web app voice-controllable in 37 languages in 5 minutes.**
 
+<video src="https://github.com/user-attachments/assets/e537db27-76d6-42bb-a2a9-b528993adca6" controls poster="docs/assets/launch.jpg" width="100%"></video>
+
 Voqi is an open-source voice control layer for web apps. Drop in a
 widget, define a few tools, and your users can operate your software
 by talking to it — creating records, navigating screens, running queries, all hands-free.
