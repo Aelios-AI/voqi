@@ -5,7 +5,7 @@ This test is NOT graded by the LLM judge — it's a direct
 string-substring assertion. The contract is concrete:
 
   1. Build a synthetic JPEG containing a unique, otherwise-impossible
-     string ("AELIOS_SCREENSHOT_TOKEN_42").
+     string ("VOQI_SCREENSHOT_TOKEN_42").
   2. Inject that image as the next captured screenshot.
   3. Ask the real agent (gpt-5.4 by default) "what does the banner on
      screen say?".
@@ -38,7 +38,7 @@ REAL_AGENT_MODEL = os.getenv("IN_APP_LLM_MODEL_FOR_TESTS", "gpt-5.4")
 # A token chosen so it cannot plausibly leak from the system prompt
 # or training data. If the agent says it back, it MUST have read the
 # image.
-SCREENSHOT_TOKEN = "AELIOS_SCREENSHOT_TOKEN_42"
+SCREENSHOT_TOKEN = "VOQI_SCREENSHOT_TOKEN_42"
 
 
 def _make_banner_screenshot(token: str) -> CapturedScreenshot:
@@ -172,11 +172,11 @@ async def test_real_agent_reads_token_from_attached_screenshot():
         assert not any(m in last.lower() for m in refusal_markers), (
             f"agent refused to engage with the screenshot: {last!r}"
         )
-        token_signals = ("AELIOS", "TOKEN_42", "SCREENSHOT_TOKEN")
+        token_signals = ("VOQI", "TOKEN_42", "SCREENSHOT_TOKEN")
         hit_count = sum(1 for s in token_signals if s in last)
         assert hit_count >= 2, (
             "model did not echo enough of the synthetic banner token to "
-            "prove it read the image (require ≥2 of: AELIOS, "
+            "prove it read the image (require ≥2 of: VOQI, "
             "SCREENSHOT_TOKEN, TOKEN_42).\n"
             f"  Token: {SCREENSHOT_TOKEN!r}\n"
             f"  Last assistant reply: {last!r}"

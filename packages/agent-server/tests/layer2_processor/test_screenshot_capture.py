@@ -29,7 +29,6 @@ from __future__ import annotations
 import pytest
 
 from tests.harness.fakes import (
-    CapturedScreenshot,
     make_placeholder_screenshot,
 )
 

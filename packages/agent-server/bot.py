@@ -41,7 +41,6 @@ print("⏳ Loading models and imports (first run only)\n")
 
 logger.info("Loading Silero VAD model...")
 from pipecat.audio.vad.silero import SileroVADAnalyzer  # noqa: E402
-from pipecat.audio.vad.vad_analyzer import VADParams  # noqa: E402
 
 logger.info("✅ Silero VAD model loaded")
 

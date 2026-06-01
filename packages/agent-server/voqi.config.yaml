@@ -35,8 +35,8 @@ software:
 
     Example Tracker is a sample project workspace for software teams —
     tasks, sprints, people, labels, comments. It's a demo target for the
-    Aelios in-app widget, not an Aelios product offering; every name,
-    task, and email address is fictional.
+    Voqi widget, not a real product; every name, task, and email
+    address is fictional.
 
     Frontend-only (no backend in this build); state lives in memory while
     the tab is open, and a hard reload re-seeds from the fixture data so
@@ -44,7 +44,7 @@ software:
 
     The agent embedded in Example Tracker can both *talk about* the
     workspace (answer questions about the data) and *take actions* on it
-    (via the 28 tools listed in the tool manifest).
+    (via the 31 tools listed in the tool manifest).
 
     ---
 

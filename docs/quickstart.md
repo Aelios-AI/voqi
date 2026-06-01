@@ -45,7 +45,7 @@ describe *your* software.
 cd packages/widget
 npm install
 npm run build
-# → dist/voqi-widget.js  (single IIFE, ~800 KB gzipped)
+# → dist/voqi-widget.js  (single IIFE, ~875 KB raw / ~245 KB gzipped)
 ```
 
 For active development, `npm run dev` rebuilds on save.

@@ -6,7 +6,6 @@ record (rather than chasing call_ids back through history)."""
 
 from __future__ import annotations
 
-import json
 
 
 async def test_history_records_batch_on_dispatch(harness_with_tools):

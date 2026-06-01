@@ -3,7 +3,6 @@ _handle_agent_turn batch_id staleness guard."""
 
 from __future__ import annotations
 
-import asyncio
 
 from brain.tool_dispatcher import ToolDispatchOutcome
 

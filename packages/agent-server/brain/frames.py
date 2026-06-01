@@ -14,7 +14,6 @@ broken by FIFO arrival order via ``_seq``.
 
 from __future__ import annotations
 
-import asyncio
 import itertools
 from dataclasses import dataclass, field
 from enum import Enum

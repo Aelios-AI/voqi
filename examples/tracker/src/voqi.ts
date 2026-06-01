@@ -41,7 +41,18 @@ interface VoqiToolDef {
     requiresConfirmation?: boolean;
 }
 
+interface VoqiBranding {
+    position?: "bottom-right" | "bottom-left";
+    themeColors?: Record<string, string>;
+}
+
+interface VoqiUserConfig {
+    agentUrl?: string;
+    branding?: VoqiBranding;
+}
+
 interface VoqiApi {
+    configure: (config: VoqiUserConfig) => void;
     defineTool: (def: VoqiToolDef) => void;
 }
 

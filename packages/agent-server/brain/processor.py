@@ -75,7 +75,6 @@ from pipecat.processors.aggregators.llm_response_universal import (
 from pipecat.processors.frame_processor import FrameDirection, FrameProcessor
 from pipecat.processors.frameworks.rtvi import RTVIClientMessageFrame, RTVIProcessor
 
-
 from .agent_output import (
     InAppAgentOutput,
     InAppToolInvocation,

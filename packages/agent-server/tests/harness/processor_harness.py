@@ -33,8 +33,7 @@ without monkeypatching ``asyncio.sleep`` globally.
 from __future__ import annotations
 
 import asyncio
-import json
-from typing import Any, Callable, Iterable, Optional
+from typing import Any, Iterable, Optional
 
 from pipecat.frames.frames import (
     Frame,
@@ -43,13 +42,11 @@ from pipecat.frames.frames import (
     LLMTextFrame,
 )
 
-from brain import processor as processor_mod
 from brain.canned_speech import CannedKey
 from brain.config import InAppRuntimeConfig, InAppTool
 from brain.frames import (
     InAppMessageFrame,
     MessageType,
-    RankedEnvelope,
 )
 from brain.processor import InAppAgentProcessor
 

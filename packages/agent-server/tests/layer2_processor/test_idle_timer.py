@@ -21,8 +21,6 @@ import asyncio
 
 from pipecat.frames.frames import CancelTaskFrame
 
-from brain.canned_speech import CannedKey
-from brain.frames import MessageType
 
 
 def _is_armed(t):

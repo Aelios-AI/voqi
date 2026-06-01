@@ -36,7 +36,6 @@ streaming framing without exploding the test surface.
 from __future__ import annotations
 
 import asyncio
-import base64
 from collections import deque
 from typing import Any, Callable, Optional
 

@@ -137,7 +137,6 @@ async def test_confirmable_tool_present_block_renders():
 async def test_budget_warning_only_near_ceiling(harness_with_tools):
     """Budget warning fires only when batches dispatched is at
     ceiling - 1 (i.e. one batch away from the cap)."""
-    from brain import processor as processor_mod
 
     h = harness_with_tools
     h.set_max_batches_per_demo(3)
