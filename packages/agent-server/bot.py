@@ -274,11 +274,9 @@ async def run_in_app_bot(runner_args: DailyRunnerArguments):
                         ),
                     ),
                 ]
-                vad_stop_secs = 0.2
             else:
                 logger.info(f"[voqi] turn detection disabled — using VAD-only strategy")
                 turn_stop_strategy = None
-                vad_stop_secs = 0.8
 
             user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
                 context,
@@ -287,9 +285,7 @@ async def run_in_app_bot(runner_args: DailyRunnerArguments):
                         start=[AdaptedMinWordsUserTurnStartStrategy(min_words=2)],
                         stop=turn_stop_strategy,
                     ),
-                    vad_analyzer=SileroVADAnalyzer(
-                        params=VADParams(stop_secs=vad_stop_secs),
-                    ),
+                    vad_analyzer=SileroVADAnalyzer(),
                 ),
             )
 

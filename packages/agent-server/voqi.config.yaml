@@ -182,7 +182,7 @@ speech_keywords: []
 # Riva, etc.), edit bot.py — the STT and TTS factory lines are clearly
 # marked. Pipecat ships drop-in adapters for the major providers:
 # https://docs.pipecat.ai/
-turn_detection: false
+turn_detection: true
 
 # Per-demonstration ceiling on dispatched tool batches. Acts as a
 # runaway-loop guardrail: if the LLM tries to dispatch a batch that
