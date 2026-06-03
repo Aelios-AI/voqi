@@ -30,7 +30,7 @@ from jinja2 import Template
 @dataclass
 class InAppTool:
     """One tool definition the agent can call. Each tool the widget
-    registers via ``Voqi.defineTool({...})`` arrives in the /start body
+    registers via ``AeliosSpark.defineTool({...})`` arrives in the /start body
     and is materialised into one of these — same ``name`` on both sides,
     so the agent's tool invocations route back to the right widget-side
     handler."""
@@ -590,7 +590,7 @@ class InAppRuntimeConfig:
     """Everything the agent needs to boot a session.
 
     Built once per session in :func:`bot.load_runtime_config` from
-    ``voqi.config.yaml`` (deployment-wide knobs) plus the widget's
+    ``aelios-spark.config.yaml`` (deployment-wide knobs) plus the widget's
     /start body (per-session choices: tools, language, mode).
     """
 

@@ -14,8 +14,8 @@ import { Inbox } from "./pages/Inbox";
 import { Settings } from "./pages/Settings";
 import { installExampleApi } from "./api/exampleActions";
 
-// Exposes react-router's `navigate` to the Voqi adapter, which runs
-// outside React (in voqi.ts) and therefore cannot call useNavigate()
+// Exposes react-router's `navigate` to the AeliosSpark adapter, which runs
+// outside React (in aelios-spark.ts) and therefore cannot call useNavigate()
 // directly. The navigate_to_page tool reads off this global.
 function NavBridge() {
     const navigate = useNavigate();

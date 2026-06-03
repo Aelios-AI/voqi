@@ -10,7 +10,7 @@
  *   the html2canvas-pro quirks around html/body overflow and gives a
  *   pixel rect that lines up with what the visitor sees in the tab.
  *
- * - The widget's own host element (``[data-voqi-host]``) is excluded
+ * - The widget's own host element (``[data-aelios-spark-host]``) is excluded
  *   via the ``ignoreElements`` callback so the agent doesn't see its
  *   own pill / transcript popover and start commenting on them.
  *
@@ -135,8 +135,8 @@ async function renderToCanvas(
             foreignObjectRendering: true,
             ignoreElements: (el: Element) => {
                 if (el instanceof HTMLElement) {
-                    if (el.hasAttribute("data-voqi-host")) return true;
-                    if (el.closest?.("[data-voqi-host]")) return true;
+                    if (el.hasAttribute("data-aelios-spark-host")) return true;
+                    if (el.closest?.("[data-aelios-spark-host]")) return true;
                 }
                 return false;
             },

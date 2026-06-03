@@ -56,7 +56,7 @@ class AdaptedRTVIProcessor(RTVIProcessor):
             # as ``_message_queue`` — that's what its own pump reads
             # from. We're delegating into the parent's pipeline here,
             # so the parent's attribute name is what matters; don't
-            # rename to anything Voqi-specific.
+            # rename to anything AeliosSpark-specific.
             await self._message_queue.put(message)
         except ValidationError as e:
             await self.send_error(f"Invalid RTVI transport message: {e}")

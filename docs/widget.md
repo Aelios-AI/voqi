@@ -8,19 +8,19 @@ in [`packages/widget`](../packages/widget).
 ## Bundle anatomy
 
 The widget builds to a single self-contained IIFE
-(`packages/widget/dist/voqi-widget.js`). When the host page loads it,
+(`packages/widget/dist/aelios-spark-widget.js`). When the host page loads it,
 the bundle:
 
-1. Registers `window.Voqi` and `window.VoqiReady` (drainable queue).
+1. Registers `window.AeliosSpark` and `window.AeliosSparkReady` (drainable queue).
 2. Finds its own `<script>` tag, reads `data-agent-url` /
    `data-mock` / `data-auto-mount` attributes.
 3. Drains any callbacks the host already pushed into
-   `window.VoqiReady` (in case the host's setup code ran before the
+   `window.AeliosSparkReady` (in case the host's setup code ran before the
    bundle finished loading).
 4. Auto-mounts on `DOMContentLoaded` unless
    `data-auto-mount="false"`.
 
-The widget renders inside a Shadow DOM rooted on a `<div data-voqi-host>`
+The widget renders inside a Shadow DOM rooted on a `<div data-aelios-spark-host>`
 appended to `<body>`. Host CSS cannot bleed in; widget CSS cannot bleed
 out.
 
@@ -30,13 +30,13 @@ The host page interacts with the widget through two registration
 patterns. They serve different concerns and can be called in any
 order.
 
-### `Voqi.configure({...})` — agent URL + widget look
+### `AeliosSpark.configure({...})` — agent URL + widget look
 
 Static config that points the widget at your agent server and tweaks
 how the pill looks:
 
 ```js
-Voqi.configure({
+AeliosSpark.configure({
     agentUrl: "https://agent.example.com/start",
     branding: {
         position: "bottom-right",            // or "bottom-left"
@@ -58,14 +58,14 @@ Idempotent and re-callable — later calls shallow-merge into earlier
 ones. Read lazily at mount, so order doesn't matter relative to
 `defineTool` calls.
 
-### `Voqi.defineTool({...})` — functions the agent can call
+### `AeliosSpark.defineTool({...})` — functions the agent can call
 
 The host page's "what can the agent actually do in my app" surface.
 Each registered tool becomes a function the LLM may invoke during
 voice turns:
 
 ```js
-Voqi.defineTool({
+AeliosSpark.defineTool({
     name: "create_contact",
     description: "Add a new contact. Use when the user says 'add' or names a new person.",
     parameters: {
@@ -89,19 +89,19 @@ registered at `/start` time counts.
 
 See [`tools.md`](tools.md) for tool-writing patterns.
 
-### The `VoqiReady` queue — order-independent setup
+### The `AeliosSparkReady` queue — order-independent setup
 
 ```js
-window.VoqiReady = window.VoqiReady || [];
-window.VoqiReady.push((Voqi) => {
-    Voqi.configure({ ... });
-    Voqi.defineTool({ ... });
-    Voqi.defineTool({ ... });
+window.AeliosSparkReady = window.AeliosSparkReady || [];
+window.AeliosSparkReady.push((AeliosSpark) => {
+    AeliosSpark.configure({ ... });
+    AeliosSpark.defineTool({ ... });
+    AeliosSpark.defineTool({ ... });
 });
 ```
 
 The queue runs every callback once the bundle loads. Pushing into
-it from your host page is safer than calling `window.Voqi.foo()`
+it from your host page is safer than calling `window.AeliosSpark.foo()`
 directly — works whether your code runs before or after the bundle.
 
 ## Connection state machine
@@ -152,7 +152,7 @@ race a legitimately slow cold start.
 
 After 90 minutes of an active session, the widget silently closes
 with a brief "Session ended" hint. No advance warning UI — the
-visitor's last interaction is final. Voqi's server backstop fires at
+visitor's last interaction is final. Aelios Spark's server backstop fires at
 100 min as a safety net; the 90-min client cap prevents the visitor
 from ever seeing it.
 
@@ -253,21 +253,21 @@ do it themselves between End and the next Start.
 ## Mock mode — UI without a backend
 
 ```html
-<script src="/voqi-widget.js" data-mock="true"></script>
+<script src="/aelios-spark-widget.js" data-mock="true"></script>
 ```
 
 Replaces both the API client and the WebRTC transport with
 deterministic fakes. No agent server needed; no network calls. A
-console control surface lands at `window.__voqiMock` for driving
+console control surface lands at `window.__aeliosSparkMock` for driving
 widget state from the dev console or test harnesses:
 
 ```js
-window.__voqiMock.simulateUserSpeech("hello")
-window.__voqiMock.simulateBotMessage("hi back")
-window.__voqiMock.simulateConnectionLoss()
-window.__voqiMock.simulateGuideCursor(0.5, 0.3, "Click here")
-window.__voqiMock.simulateIdleTimeoutEnd()
-window.__voqiMock.simulatePermissionDenied()
+window.__aeliosSparkMock.simulateUserSpeech("hello")
+window.__aeliosSparkMock.simulateBotMessage("hi back")
+window.__aeliosSparkMock.simulateConnectionLoss()
+window.__aeliosSparkMock.simulateGuideCursor(0.5, 0.3, "Click here")
+window.__aeliosSparkMock.simulateIdleTimeoutEnd()
+window.__aeliosSparkMock.simulatePermissionDenied()
 ```
 
 Mock mode is the right tool for visually QA'ing widget behaviour
@@ -278,7 +278,7 @@ across states without setting up the agent server. See
 ## Theming
 
 The widget exposes five CSS custom properties scoped to the Shadow
-DOM. Pass `themeColors` to `Voqi.configure({ branding: { themeColors } })`
+DOM. Pass `themeColors` to `AeliosSpark.configure({ branding: { themeColors } })`
 to override:
 
 ```js
@@ -323,7 +323,7 @@ When a `tool_call_batch` RTVI message arrives:
    [`modes.md`](modes.md#confirmation-flow-requiresconfirmation-true)).
 
 The agent server's per-batch timeout (default 60s, configurable via
-`batch_timeout_seconds:` in `voqi.config.yaml`) resolves the batch
+`batch_timeout_seconds:` in `aelios-spark.config.yaml`) resolves the batch
 as failed if any tool takes longer than that to report back.
 
 ## Where to read next

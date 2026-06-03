@@ -1,4 +1,4 @@
-"""Voqi adapters — every wrapper that sits between the agent brain and the
+"""AeliosSpark adapters — every wrapper that sits between the agent brain and the
 outside world.
 
 What lives here:

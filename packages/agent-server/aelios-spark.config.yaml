@@ -1,4 +1,4 @@
-# Voqi agent configuration
+# AeliosSpark agent configuration
 # ─────────────────────────
 # Edit this file to teach the agent what your software is, how it should
 # behave, and what knowledge it has access to. The widget supplies the
@@ -35,7 +35,7 @@ software:
 
     Example Tracker is a sample project workspace for software teams —
     tasks, sprints, people, labels, comments. It's a demo target for the
-    Voqi widget, not a real product; every name, task, and email
+    AeliosSpark widget, not a real product; every name, task, and email
     address is fictional.
 
     Frontend-only (no backend in this build); state lives in memory while
@@ -155,7 +155,7 @@ software:
 # Extra instructions appended to the agent's system prompt. Use this to
 # add business rules ("never delete tasks with unresolved comments"),
 # stylistic preferences, or constraints the agent should always honour.
-# This is NOT the full system prompt — Voqi builds that itself from
+# This is NOT the full system prompt — AeliosSpark builds that itself from
 # persona + software docs + tools. This block is concatenated in.
 # Leave blank to skip.
 additional_instructions:

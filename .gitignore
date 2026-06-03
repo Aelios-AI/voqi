@@ -22,7 +22,7 @@ __pycache__/
 # Build artefacts
 *.tsbuildinfo
 packages/widget/public/
-examples/tracker/public/voqi-widget.js
+examples/tracker/public/aelios-spark-widget.js
 
 # Logs
 packages/agent-server/logs/

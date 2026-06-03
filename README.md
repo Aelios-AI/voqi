@@ -1,10 +1,10 @@
-# Voqi
+# Aelios Spark
 
 **Make any web app voice-controllable in 37 languages in 5 minutes.**
 
 <video src="https://github.com/user-attachments/assets/e537db27-76d6-42bb-a2a9-b528993adca6" controls poster="docs/assets/launch.jpg" width="100%"></video>
 
-Voqi is an open-source voice control layer for web apps. Drop in a
+Aelios Spark is an open-source voice control layer for web apps. Drop in a
 widget, define a few tools, and your users can operate your software
 by talking to it — creating records, navigating screens, running queries, all hands-free.
 
@@ -12,11 +12,11 @@ by talking to it — creating records, navigating screens, running queries, all 
 flowchart LR
     user(["🎙️ User"])
     subgraph host["Your web app (browser)"]
-        widget["Voqi widget<br/>+ your tool defs"]
+        widget["Aelios Spark widget<br/>+ your tool defs"]
     end
     subgraph server["Your machine / VPS"]
-        agent["Voqi agent server<br/>(Python / Pipecat)"]
-        cfg[("voqi.config.yaml<br/>prompt · persona · KB")]
+        agent["Aelios Spark agent server<br/>(Python / Pipecat)"]
+        cfg[("aelios-spark.config.yaml<br/>prompt · persona · KB")]
         agent -.reads.-> cfg
     end
     user <-->|voice| widget
@@ -37,7 +37,7 @@ own API keys for OpenAI, Daily, Deepgram, Cartesia.
 > [Aelios AI](https://aeliosai.com) — autoscaling, multi-tenant
 > agents, hosted control plane, continuous-learning loops, and a
 > separate **video demo agent** that learns your software and
-> streams hands-free product demos 24/7. The OSS Voqi widget is the
+> streams hands-free product demos 24/7. The OSS Aelios Spark widget is the
 > same code path; the managed platform adds the surfaces around it.
 
 ---
@@ -70,8 +70,8 @@ You need three things running:
 
 ```bash
 # Clone
-git clone https://github.com/Aelios-AI/voqi
-cd voqi
+git clone https://github.com/Aelios-AI/aelios-spark
+cd aelios-spark
 
 # 1. Agent server
 cd packages/agent-server
@@ -82,7 +82,7 @@ uv run python server.py    # serves :3002
 # 2. Widget bundle (in another terminal)
 cd packages/widget
 npm install
-npm run build              # produces dist/voqi-widget.js
+npm run build              # produces dist/aelios-spark-widget.js
 
 # 3. Try the example app
 cd ../../examples/tracker
@@ -106,14 +106,14 @@ sequenceDiagram
     autonumber
     participant User
     participant Page as Host page
-    participant Widget as Voqi widget
+    participant Widget as Aelios Spark widget
     participant Server as Agent server
     participant LLM as LLM + STT + TTS
 
-    Page->>Widget: Voqi.configure({...}), Voqi.defineTool(...)
+    Page->>Widget: AeliosSpark.configure({...}), AeliosSpark.defineTool(...)
     User->>Widget: Click launcher, pick language/mode
     Widget->>Server: POST /start (tools + lang + mode)
-    Server->>Server: Load voqi.config.yaml<br/>(prompt + persona + KB)
+    Server->>Server: Load aelios-spark.config.yaml<br/>(prompt + persona + KB)
     Server-->>Widget: Daily room URL + token
     Note over Widget,Server: WebRTC voice loop established
 
@@ -142,7 +142,7 @@ A session has three layers:
    manages demonstrations, requests screenshots, runs idle timers,
    and applies schema-gated structured output.
 3. **Your web app** (the host page) registers tools and calls
-   `Voqi.configure(...)` to point at the agent server and tweak the
+   `AeliosSpark.configure(...)` to point at the agent server and tweak the
    pill's position + theme colors.
 
 Tool calls flow over the RTVI data channel; audio flows over WebRTC.
@@ -160,13 +160,13 @@ RTVI custom-message protocol), read
 The host page interacts with the widget through two patterns. They
 serve different concerns and can be called in any order.
 
-### Pattern 1 — `Voqi.configure({...})`: agent URL + widget look
+### Pattern 1 — `AeliosSpark.configure({...})`: agent URL + widget look
 
 Tells the widget where the agent server is and how it should look.
 The full surface is small — see [`docs/configuration.md`](docs/configuration.md):
 
 ```js
-Voqi.configure({
+AeliosSpark.configure({
     agentUrl: "http://localhost:3002/start",
     branding: {
         position: "bottom-right",      // or "bottom-left"
@@ -181,14 +181,14 @@ Voqi.configure({
 });
 ```
 
-### Pattern 2 — `Voqi.defineTool({...})`: callable functions
+### Pattern 2 — `AeliosSpark.defineTool({...})`: callable functions
 
 Each tool the agent can invoke during voice turns. Tools accumulate
 in an in-memory registry; at session start, the registry is forwarded
 to the agent server as the session's tool set.
 
 ```js
-Voqi.defineTool({
+AeliosSpark.defineTool({
     name: "create_contact",
     description: "Add a new contact. Use when the user says 'add' or names a new person.",
     parameters: {
@@ -204,26 +204,26 @@ Voqi.defineTool({
 });
 ```
 
-### The `VoqiReady` queue — order-independent setup
+### The `AeliosSparkReady` queue — order-independent setup
 
 Both patterns work through a callback queue so they're safe to call
 before the widget bundle has finished loading:
 
 ```html
-<script src="/voqi-widget.js" data-agent-url="http://localhost:3002/start"></script>
+<script src="/aelios-spark-widget.js" data-agent-url="http://localhost:3002/start"></script>
 <script>
-  window.VoqiReady = window.VoqiReady || [];
-  window.VoqiReady.push((Voqi) => {
-    Voqi.configure({ ... });
-    Voqi.defineTool({ ... });
-    Voqi.defineTool({ ... });
+  window.AeliosSparkReady = window.AeliosSparkReady || [];
+  window.AeliosSparkReady.push((AeliosSpark) => {
+    AeliosSpark.configure({ ... });
+    AeliosSpark.defineTool({ ... });
+    AeliosSpark.defineTool({ ... });
   });
 </script>
 ```
 
 Then on the server side — tell the agent who it is, what your
 software is, and what it should know about it — in
-`packages/agent-server/voqi.config.yaml`. Both the agent's persona
+`packages/agent-server/aelios-spark.config.yaml`. Both the agent's persona
 **and** the host software's knowledge base live here, because both
 get baked into the system prompt the LLM sees every turn:
 
@@ -251,7 +251,7 @@ Full widget config schema in
 
 ## Two modes — action and guide
 
-Voqi sessions run in one of two modes. The visitor picks at session
+Aelios Spark sessions run in one of two modes. The visitor picks at session
 start; the choice is frozen for the session.
 
 | | `action` (default) | `guide` |
@@ -305,7 +305,7 @@ Cartesia handles TTS.
 🇹🇷 Turkish · 🇻🇳 Vietnamese
 
 All 37 ship with native Cartesia voices out of the box. **All bundled
-voices are female** — if you set `agent.name` in `voqi.config.yaml`,
+voices are female** — if you set `agent.name` in `aelios-spark.config.yaml`,
 pick a feminine name so the persona name and the spoken voice match.
 Operators who want a different voice (different gender, different
 accent, custom clone) should override per-agent via `voice_languages`
@@ -351,7 +351,7 @@ ElevenLabs, Riva, AssemblyAI, SmallWebRTC, etc. See the
 ## Repo layout
 
 ```
-voqi/
+aelios-spark/
 ├── packages/
 │   ├── widget/         the embeddable JS — runs in your users' browsers
 │   └── agent-server/   the Python voice agent — you run this
@@ -376,7 +376,7 @@ manual.
 | [`docs/modes.md`](docs/modes.md) | Action vs guide mode — the schema differences, the two-trigger rule, confirmation flow, screenshot behaviour, when to use each |
 | [`docs/widget.md`](docs/widget.md) | Widget bundle anatomy, connection state machine, session timing rules (90-min cap, 6-min connecting timeout, etc.), idle protocol, error states, mock mode, theming |
 | [`docs/tools.md`](docs/tools.md) | Writing tool definitions — when to call, return values, parallel batches, confirmation flow, common patterns |
-| [`docs/configuration.md`](docs/configuration.md) | Every config knob — widget-side (`Voqi.configure(...)`) and server-side (`voqi.config.yaml`), env vars, provider swaps |
+| [`docs/configuration.md`](docs/configuration.md) | Every config knob — widget-side (`AeliosSpark.configure(...)`) and server-side (`aelios-spark.config.yaml`), env vars, provider swaps |
 | [`packages/agent-server/tests/README.md`](packages/agent-server/tests/README.md) | Three-layer test architecture (unit / processor / real-LLM-judge), when to add tests at which layer |
 
 Read in roughly that order if you want to understand the whole
@@ -391,7 +391,7 @@ The agent server is built on top of
 framework for voice + multimodal conversational AI. All STT/TTS/
 transport wrappers live in [`packages/agent-server/adapters/`](packages/agent-server/adapters/) —
 swap in any of [Pipecat's services](https://docs.pipecat.ai/)
-and Voqi keeps working.
+and Aelios Spark keeps working.
 
 ---
 
@@ -401,7 +401,7 @@ PRs welcome — see [`CONTRIBUTING.md`](CONTRIBUTING.md) for dev setup,
 the three-layer test contract, the contributions matrix, and code
 style.
 
-Voqi is a real OSS project backed by a real production agent loop, so
+Aelios Spark is a real OSS project backed by a real production agent loop, so
 changes that touch the agent state machine get reviewed carefully.
 The "Reviewed carefully" rows in CONTRIBUTING flag exactly which
 areas those are.

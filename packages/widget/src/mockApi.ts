@@ -14,7 +14,7 @@ declare global {
          *  as `themeColors`, so the widget themes itself end-to-end
          *  without a backend. See widget-mock-test.html for the
          *  catalog and a theme switcher. */
-        __voqiMockThemeColors?: InAppWidgetThemeColors;
+        __aeliosSparkMockThemeColors?: InAppWidgetThemeColors;
     }
 }
 
@@ -31,8 +31,8 @@ export class MockInAppApi implements IInAppApi {
                 position: "bottom-right",
             },
             themeColors:
-                typeof window !== "undefined" && window.__voqiMockThemeColors
-                    ? window.__voqiMockThemeColors
+                typeof window !== "undefined" && window.__aeliosSparkMockThemeColors
+                    ? window.__aeliosSparkMockThemeColors
                     : null,
         };
     }

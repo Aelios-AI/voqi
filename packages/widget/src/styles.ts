@@ -3,12 +3,12 @@
  *
  * Default theme is dark pill + pure-white accent. Four CSS custom
  * properties drive every colour decision below — set them on
- * ``[data-voqi-host]`` to retheme:
+ * ``[data-aelios-spark-host]`` to retheme:
  *
- *   --voqi-bg       pill body (default #0A0A0A)
- *   --voqi-text     primary text + neutral hover ink (#F4F5F7)
- *   --voqi-muted    status text, secondary glyphs (#A0A0A0)
- *   --voqi-primary  accent: indicator glyph, dot pulse, send button,
+ *   --aelios-spark-bg       pill body (default #0A0A0A)
+ *   --aelios-spark-text     primary text + neutral hover ink (#F4F5F7)
+ *   --aelios-spark-muted    status text, secondary glyphs (#A0A0A0)
+ *   --aelios-spark-primary  accent: indicator glyph, dot pulse, send button,
  *                     user-message bubble, focus ring (#F4F5F7)
  *
  * Two visual states share one structure:
@@ -31,24 +31,24 @@
 export const WIDGET_CSS = `
 :host {
     /* Default: dark pill + pure-white accent. The four tokens below are
-       the *only* knobs the host page should override (--voqi-bg /
-       --voqi-text / --voqi-muted / --voqi-primary). Everything
+       the *only* knobs the host page should override (--aelios-spark-bg /
+       --aelios-spark-text / --aelios-spark-muted / --aelios-spark-primary). Everything
        else in this stylesheet derives from them via color-mix so a
        theme swap stays internally consistent. */
-    --voqi-primary: #F4F5F7;
-    --voqi-primary-soft: color-mix(in srgb, var(--voqi-primary) 18%, transparent);
-    --voqi-bg: #0A0A0A;
-    --voqi-text: #F4F5F7;
-    --voqi-muted: #A0A0A0;
-    --voqi-border: color-mix(in srgb, var(--voqi-primary) 40%, transparent);
-    --voqi-border-strong: color-mix(in srgb, var(--voqi-primary) 65%, transparent);
-    /* The colour that goes ON TOP of --voqi-primary surfaces — the
+    --aelios-spark-primary: #F4F5F7;
+    --aelios-spark-primary-soft: color-mix(in srgb, var(--aelios-spark-primary) 18%, transparent);
+    --aelios-spark-bg: #0A0A0A;
+    --aelios-spark-text: #F4F5F7;
+    --aelios-spark-muted: #A0A0A0;
+    --aelios-spark-border: color-mix(in srgb, var(--aelios-spark-primary) 40%, transparent);
+    --aelios-spark-border-strong: color-mix(in srgb, var(--aelios-spark-primary) 65%, transparent);
+    /* The colour that goes ON TOP of --aelios-spark-primary surfaces — the
        send button icon, the user message bubble text. Must always be
        opaque and high-contrast against the accent. The host page is
        responsible for setting this; the widget defaults to dark
        (works on the widget's default white accent). For dark accents
        (e.g. a black-primary theme) override to #F4F5F7. */
-    --voqi-on-primary: #0A0A0A;
+    --aelios-spark-on-primary: #0A0A0A;
 
     /* State accent inks — applied to the indicator + status dot only,
        so the dark pill chrome stays consistent. Minimal palette: the
@@ -56,22 +56,22 @@ export const WIDGET_CSS = `
        icon glyph + dot pulse communicate WHICH active state we're
        in, not the colour. Red is reserved EXCLUSIVELY for connection
        issues so its appearance is unambiguous. */
-    --pill-active-ink: var(--voqi-primary);
+    --pill-active-ink: var(--aelios-spark-primary);
     /* Error ink blends a saturated red base with the theme's text
        colour. The "red signal" stays unambiguous across every theme
        while the blend gives proper contrast against both the cream /
        mint pill bodies (where pure light-coral washed out) and the
        black / sapphire pill bodies (where dark red disappeared). */
-    --pill-error-ink: color-mix(in srgb, #E11D48 65%, var(--voqi-text));
+    --pill-error-ink: color-mix(in srgb, #E11D48 65%, var(--aelios-spark-text));
 
-    --pill-shadow: 0 6px 18px color-mix(in srgb, var(--voqi-primary) 22%, transparent),
+    --pill-shadow: 0 6px 18px color-mix(in srgb, var(--aelios-spark-primary) 22%, transparent),
                    0 1px 2px rgba(0, 0, 0, 0.4);
-    --pill-shadow-hover: 0 10px 24px color-mix(in srgb, var(--voqi-primary) 30%, transparent),
+    --pill-shadow-hover: 0 10px 24px color-mix(in srgb, var(--aelios-spark-primary) 30%, transparent),
                          0 2px 4px rgba(0, 0, 0, 0.5);
 
     all: initial;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    color: var(--voqi-text);
+    color: var(--aelios-spark-text);
     line-height: 1.4;
     z-index: 2147483646;
 }
@@ -110,9 +110,9 @@ export const WIDGET_CSS = `
     position: relative;
     display: inline-flex;
     align-items: stretch;
-    background: var(--voqi-bg);
-    color: var(--voqi-primary);
-    border: 1px solid var(--voqi-border);
+    background: var(--aelios-spark-bg);
+    color: var(--aelios-spark-primary);
+    border: 1px solid var(--aelios-spark-border);
     border-radius: 22px;
     overflow: visible;
     box-shadow: var(--pill-shadow);
@@ -120,7 +120,7 @@ export const WIDGET_CSS = `
     transition: border-color 150ms ease, box-shadow 150ms ease, transform 120ms ease;
 }
 .pill:hover {
-    border-color: var(--voqi-border-strong);
+    border-color: var(--aelios-spark-border-strong);
     box-shadow: var(--pill-shadow-hover);
 }
 .pill[data-shape="circle"] { border-radius: 50%; }
@@ -157,7 +157,7 @@ export const WIDGET_CSS = `
    light theme (dark text on white pill) flips to a dark tint, and a
    dark theme (light text on black pill) keeps the white tint. */
 .pill-action:not(.pill-action-static):hover  {
-    background: color-mix(in srgb, var(--voqi-text) 5%, transparent);
+    background: color-mix(in srgb, var(--aelios-spark-text) 5%, transparent);
 }
 .pill-action:not(.pill-action-static):active { transform: translateY(1px); }
 .pill-action[disabled] { opacity: 0.55; cursor: not-allowed; }
@@ -217,25 +217,25 @@ export const WIDGET_CSS = `
 .pill-indicator svg { width: 16px; height: 16px; }
 
 .pill-label {
-    color: var(--voqi-primary);
+    color: var(--aelios-spark-primary);
     white-space: nowrap;
 }
 .pill-label-muted {
-    color: var(--voqi-muted);
+    color: var(--aelios-spark-muted);
     font-weight: 500;
     font-size: 12px;
 }
 
 .pill-divider {
     width: 1px;
-    background: color-mix(in srgb, var(--voqi-primary) 22%, transparent);
+    background: color-mix(in srgb, var(--aelios-spark-primary) 22%, transparent);
     margin: 8px 0;
 }
 
 .pill-secondary {
     border: 0;
     background: transparent;
-    color: var(--voqi-muted);
+    color: var(--aelios-spark-muted);
     cursor: pointer;
     width: 36px;
     height: 100%;
@@ -246,19 +246,19 @@ export const WIDGET_CSS = `
     transition: color 120ms ease, background-color 120ms ease;
 }
 .pill-secondary:hover {
-    background: color-mix(in srgb, var(--voqi-text) 6%, transparent);
-    color: var(--voqi-text);
+    background: color-mix(in srgb, var(--aelios-spark-text) 6%, transparent);
+    color: var(--aelios-spark-text);
 }
 .pill-secondary:active {
-    background: color-mix(in srgb, var(--voqi-text) 10%, transparent);
+    background: color-mix(in srgb, var(--aelios-spark-text) 10%, transparent);
 }
 .pill-secondary[disabled] {
     opacity: 0.4;
     cursor: not-allowed;
 }
 .pill-secondary[aria-pressed="true"] {
-    background: var(--voqi-primary-soft);
-    color: var(--voqi-primary);
+    background: var(--aelios-spark-primary-soft);
+    color: var(--aelios-spark-primary);
 }
 
 /* End-session button. Warm red on hover signals "destructive", but
@@ -266,10 +266,10 @@ export const WIDGET_CSS = `
    harmonised muted red on light themes (cream / mint / etc) instead
    of a bright cherry that fights the brand chrome. The red base stays
    constant; only how much of it shows through changes per theme. */
-.pill-end { color: var(--voqi-muted); }
+.pill-end { color: var(--aelios-spark-muted); }
 .pill-end:hover {
     background: color-mix(in srgb, #E11D48 12%, transparent);
-    color: color-mix(in srgb, #E11D48 65%, var(--voqi-text));
+    color: color-mix(in srgb, #E11D48 65%, var(--aelios-spark-text));
 }
 
 /* ── Custom tooltips ───────────────────────────────────────────────
@@ -286,9 +286,9 @@ export const WIDGET_CSS = `
     bottom: calc(100% + 8px);
     left: 50%;
     transform: translateX(-50%);
-    background: color-mix(in srgb, var(--voqi-bg) 96%, transparent);
-    color: var(--voqi-text);
-    border: 1px solid color-mix(in srgb, var(--voqi-text) 12%, transparent);
+    background: color-mix(in srgb, var(--aelios-spark-bg) 96%, transparent);
+    color: var(--aelios-spark-text);
+    border: 1px solid color-mix(in srgb, var(--aelios-spark-text) 12%, transparent);
     padding: 5px 9px;
     border-radius: 6px;
     font-size: 12px;
@@ -308,7 +308,7 @@ export const WIDGET_CSS = `
 [data-tooltip][disabled]:hover::after { opacity: 0; }
 .pill-secondary:focus-visible {
     outline: none;
-    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--voqi-primary) 60%, transparent);
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--aelios-spark-primary) 60%, transparent);
 }
 .pill .pill-secondary:last-child {
     border-radius: 0 22px 22px 0;
@@ -346,7 +346,7 @@ export const WIDGET_CSS = `
    above/below the pair. Click-only (wheel scroll is intentionally
    not bound, to avoid trapping the host page's scroll). Reads as a
    real button: soft elevation, hover lift, theme-aware via
-   --voqi-text. */
+   --aelios-spark-text. */
 .caption-pager {
     align-self: center;
     display: inline-flex;
@@ -356,9 +356,9 @@ export const WIDGET_CSS = `
     height: 26px;
     padding: 0 14px;
     margin: 6px 0;
-    background: color-mix(in srgb, var(--voqi-text) 14%, var(--voqi-bg));
-    border: 1px solid color-mix(in srgb, var(--voqi-text) 22%, transparent);
-    color: var(--voqi-text);
+    background: color-mix(in srgb, var(--aelios-spark-text) 14%, var(--aelios-spark-bg));
+    border: 1px solid color-mix(in srgb, var(--aelios-spark-text) 22%, transparent);
+    color: var(--aelios-spark-text);
     border-radius: 999px;
     font-size: 11.5px;
     font-weight: 600;
@@ -373,14 +373,14 @@ export const WIDGET_CSS = `
 }
 .caption-pager:hover {
     opacity: 1;
-    background: color-mix(in srgb, var(--voqi-text) 22%, var(--voqi-bg));
-    border-color: color-mix(in srgb, var(--voqi-text) 36%, transparent);
+    background: color-mix(in srgb, var(--aelios-spark-text) 22%, var(--aelios-spark-bg));
+    border-color: color-mix(in srgb, var(--aelios-spark-text) 36%, transparent);
     transform: translateY(-1px);
 }
 .caption-pager:active { transform: translateY(0); }
 .caption-pager:focus-visible {
     outline: none;
-    border-color: color-mix(in srgb, var(--voqi-primary) 65%, transparent);
+    border-color: color-mix(in srgb, var(--aelios-spark-primary) 65%, transparent);
 }
 .caption-pager svg { display: block; flex-shrink: 0; }
 /* Real margin between the two visible captions. We don't rely on
@@ -397,14 +397,14 @@ export const WIDGET_CSS = `
 .caption {
     max-width: 320px;
     padding: 10px 14px;
-    background: color-mix(in srgb, var(--voqi-text) 6%, var(--voqi-bg));
-    color: var(--voqi-text);
-    border: 1px solid color-mix(in srgb, var(--voqi-text) 8%, transparent);
+    background: color-mix(in srgb, var(--aelios-spark-text) 6%, var(--aelios-spark-bg));
+    color: var(--aelios-spark-text);
+    border: 1px solid color-mix(in srgb, var(--aelios-spark-text) 8%, transparent);
     font-size: 13px;
     line-height: 1.45;
     border-radius: 14px;
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
-    animation: voqi-caption-in 160ms ease-out;
+    animation: aelios-spark-caption-in 160ms ease-out;
     flex-shrink: 0;
 }
 /* Visitor's own utterance — iMessage-style. Filled bubble using the
@@ -413,9 +413,9 @@ export const WIDGET_CSS = `
    anchor (left-anchored on bottom-left). Solid + colored stands
    apart unmistakably from the agent's dark/translucent bubble. */
 .caption[data-role="user"] {
-    background: var(--voqi-primary);
-    border: 1px solid var(--voqi-primary);
-    color: var(--voqi-on-primary);
+    background: var(--aelios-spark-primary);
+    border: 1px solid var(--aelios-spark-primary);
+    color: var(--aelios-spark-on-primary);
     align-self: flex-end;
     border-bottom-right-radius: 4px;
     /* Tiny "You" tag above the bubble — relative-positioned so the
@@ -432,7 +432,7 @@ export const WIDGET_CSS = `
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--voqi-muted);
+    color: var(--aelios-spark-muted);
 }
 .root[data-position="bottom-left"] .caption[data-role="user"] {
     align-self: flex-start;
@@ -461,7 +461,7 @@ export const WIDGET_CSS = `
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--voqi-muted);
+    color: var(--aelios-spark-muted);
 }
 .root[data-position="bottom-left"] .caption[data-role="assistant"] {
     border-bottom-left-radius: 14px;
@@ -476,14 +476,14 @@ export const WIDGET_CSS = `
     font-size: 12.5px;
 }
 
-@keyframes voqi-caption-in {
+@keyframes aelios-spark-caption-in {
     from { opacity: 0; transform: translateY(6px); }
     to   { opacity: 1; transform: translateY(0); }
 }
 .caption[data-recency="prior"] {
-    animation-name: voqi-caption-in-faded;
+    animation-name: aelios-spark-caption-in-faded;
 }
-@keyframes voqi-caption-in-faded {
+@keyframes aelios-spark-caption-in-faded {
     from { opacity: 0; transform: translateY(6px); }
     to   { opacity: 0.55; transform: translateY(0); }
 }
@@ -501,9 +501,9 @@ export const WIDGET_CSS = `
        Matches the assistant caption treatment so the toast reads as
        "part of the same surface" on every theme — cream toast on
        cream pill, midnight toast on midnight pill, etc. */
-    background: color-mix(in srgb, var(--voqi-text) 6%, var(--voqi-bg));
-    color: var(--voqi-text);
-    border: 1px solid color-mix(in srgb, var(--voqi-text) 12%, transparent);
+    background: color-mix(in srgb, var(--aelios-spark-text) 6%, var(--aelios-spark-bg));
+    color: var(--aelios-spark-text);
+    border: 1px solid color-mix(in srgb, var(--aelios-spark-text) 12%, transparent);
     border-radius: 10px;
     font-size: 12.5px;
     line-height: 1.45;
@@ -514,7 +514,7 @@ export const WIDGET_CSS = `
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
 }
-.toast strong { font-weight: 600; color: var(--voqi-text); }
+.toast strong { font-weight: 600; color: var(--aelios-spark-text); }
 .toast-warn,
 .toast-error {
     /* Both legacy variants collapse onto the neutral style — kept as
@@ -524,14 +524,14 @@ export const WIDGET_CSS = `
     margin-left: auto;
     background: transparent;
     border: 0;
-    color: var(--voqi-muted);
+    color: var(--aelios-spark-muted);
     font-size: 16px;
     line-height: 1;
     cursor: pointer;
     padding: 0 4px;
     transition: color 120ms ease;
 }
-.toast-dismiss:hover { color: var(--voqi-text); }
+.toast-dismiss:hover { color: var(--aelios-spark-text); }
 
 /* ── Text input row ────────────────────────────────────────────── */
 
@@ -539,8 +539,8 @@ export const WIDGET_CSS = `
     display: flex;
     align-items: center;
     gap: 6px;
-    background: var(--voqi-bg);
-    border: 1px solid var(--voqi-border);
+    background: var(--aelios-spark-bg);
+    border: 1px solid var(--aelios-spark-border);
     border-radius: 22px;
     padding: 4px 4px 4px 14px;
     box-shadow: var(--pill-shadow);
@@ -554,20 +554,20 @@ export const WIDGET_CSS = `
     background: transparent;
     font: inherit;
     font-size: 14px;
-    color: var(--voqi-text);
+    color: var(--aelios-spark-text);
     padding: 0;
 }
-.text-input::placeholder { color: var(--voqi-muted); }
+.text-input::placeholder { color: var(--aelios-spark-muted); }
 .text-send {
     width: 36px;
     height: 36px;
     border-radius: 50%;
     border: 0;
-    background: var(--voqi-primary);
-    /* Always reach for --voqi-on-primary, NOT --voqi-bg — the bg
+    background: var(--aelios-spark-primary);
+    /* Always reach for --aelios-spark-on-primary, NOT --aelios-spark-bg — the bg
        can be translucent in glass themes, which would make the icon
        disappear when primary and bg both happen to be white. */
-    color: var(--voqi-on-primary);
+    color: var(--aelios-spark-on-primary);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -575,7 +575,7 @@ export const WIDGET_CSS = `
     transition: background-color 120ms ease, opacity 120ms ease;
 }
 .text-send:hover {
-    background: color-mix(in srgb, var(--voqi-primary) 80%, var(--voqi-bg));
+    background: color-mix(in srgb, var(--aelios-spark-primary) 80%, var(--aelios-spark-bg));
 }
 .text-send[disabled] {
     opacity: 0.4;
@@ -596,7 +596,7 @@ export const WIDGET_CSS = `
 .pill-minimize {
     border: 0;
     background: transparent;
-    color: color-mix(in srgb, var(--voqi-muted) 70%, transparent);
+    color: color-mix(in srgb, var(--aelios-spark-muted) 70%, transparent);
     cursor: pointer;
     width: 22px;
     height: 100%;
@@ -608,12 +608,12 @@ export const WIDGET_CSS = `
     transition: color 120ms ease, background-color 120ms ease;
 }
 .pill-minimize:hover {
-    color: var(--voqi-text);
-    background: color-mix(in srgb, var(--voqi-text) 5%, transparent);
+    color: var(--aelios-spark-text);
+    background: color-mix(in srgb, var(--aelios-spark-text) 5%, transparent);
 }
 .pill-minimize:focus-visible {
     outline: none;
-    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--voqi-primary) 50%, transparent);
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--aelios-spark-primary) 50%, transparent);
 }
 
 /* Slide the entire widget shell DOWN past the bottom of the viewport.
@@ -652,9 +652,9 @@ export const WIDGET_CSS = `
     z-index: 2147483646;
     height: 28px;
     padding: 0 11px 0 9px;
-    background: color-mix(in srgb, var(--voqi-primary) 14%, var(--voqi-bg));
-    color: var(--voqi-primary);
-    border: 1px solid color-mix(in srgb, var(--voqi-primary) 40%, transparent);
+    background: color-mix(in srgb, var(--aelios-spark-primary) 14%, var(--aelios-spark-bg));
+    color: var(--aelios-spark-primary);
+    border: 1px solid color-mix(in srgb, var(--aelios-spark-primary) 40%, transparent);
     border-bottom: 0;
     border-radius: 10px 10px 0 0;
     cursor: pointer;
@@ -667,47 +667,47 @@ export const WIDGET_CSS = `
     letter-spacing: 0.01em;
     line-height: 1;
     box-shadow:
-        0 -6px 20px color-mix(in srgb, var(--voqi-primary) 24%, transparent),
-        0 0 0 1px color-mix(in srgb, var(--voqi-primary) 10%, transparent);
+        0 -6px 20px color-mix(in srgb, var(--aelios-spark-primary) 24%, transparent),
+        0 0 0 1px color-mix(in srgb, var(--aelios-spark-primary) 10%, transparent);
     transition: color 120ms ease, background-color 120ms ease,
                 border-color 120ms ease, transform 140ms ease,
                 box-shadow 140ms ease;
-    animation: voqi-restore-in 240ms cubic-bezier(0.4, 0, 0.2, 1);
+    animation: aelios-spark-restore-in 240ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .restore-tab[data-position="bottom-right"] { right: 24px; }
 .restore-tab[data-position="bottom-left"]  { left: 24px; }
 .restore-tab:hover {
     transform: translateY(-2px);
-    background: color-mix(in srgb, var(--voqi-primary) 22%, var(--voqi-bg));
-    border-color: color-mix(in srgb, var(--voqi-primary) 65%, transparent);
+    background: color-mix(in srgb, var(--aelios-spark-primary) 22%, var(--aelios-spark-bg));
+    border-color: color-mix(in srgb, var(--aelios-spark-primary) 65%, transparent);
     box-shadow:
-        0 -10px 28px color-mix(in srgb, var(--voqi-primary) 36%, transparent),
-        0 0 0 1px color-mix(in srgb, var(--voqi-primary) 18%, transparent);
+        0 -10px 28px color-mix(in srgb, var(--aelios-spark-primary) 36%, transparent),
+        0 0 0 1px color-mix(in srgb, var(--aelios-spark-primary) 18%, transparent);
 }
 .restore-tab:active { transform: translateY(0); }
 .restore-tab:focus-visible {
     outline: none;
-    border-color: var(--voqi-primary);
+    border-color: var(--aelios-spark-primary);
     box-shadow:
-        0 0 0 3px color-mix(in srgb, var(--voqi-primary) 30%, transparent),
-        0 -6px 20px color-mix(in srgb, var(--voqi-primary) 24%, transparent);
+        0 0 0 3px color-mix(in srgb, var(--aelios-spark-primary) 30%, transparent),
+        0 -6px 20px color-mix(in srgb, var(--aelios-spark-primary) 24%, transparent);
 }
 .restore-tab svg {
     width: 11px;
     height: 11px;
     flex-shrink: 0;
-    animation: voqi-restore-pulse-up 2.4s ease-in-out infinite;
+    animation: aelios-spark-restore-pulse-up 2.4s ease-in-out infinite;
 }
 .restore-tab:hover svg { animation: none; }
 .restore-tab-label {
     color: currentColor;
     white-space: nowrap;
 }
-@keyframes voqi-restore-pulse-up {
+@keyframes aelios-spark-restore-pulse-up {
     0%, 100% { transform: translateY(0); opacity: 0.85; }
     50%      { transform: translateY(-2px); opacity: 1; }
 }
-@keyframes voqi-restore-in {
+@keyframes aelios-spark-restore-in {
     from { opacity: 0; transform: translateY(12px); }
     to   { opacity: 1; transform: translateY(0); }
 }
@@ -732,22 +732,22 @@ export const WIDGET_CSS = `
     justify-content: center;
     padding: 20px;
     pointer-events: auto;
-    animation: voqi-picker-fade-in 160ms ease-out;
+    animation: aelios-spark-picker-fade-in 160ms ease-out;
 }
 
 .picker-card {
     position: relative;
-    background: var(--voqi-bg);
-    color: var(--voqi-text);
-    border: 1px solid color-mix(in srgb, var(--voqi-primary) 22%, transparent);
+    background: var(--aelios-spark-bg);
+    color: var(--aelios-spark-text);
+    border: 1px solid color-mix(in srgb, var(--aelios-spark-primary) 22%, transparent);
     border-radius: 18px;
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5),
-                0 0 0 1px color-mix(in srgb, var(--voqi-primary) 8%, transparent);
+                0 0 0 1px color-mix(in srgb, var(--aelios-spark-primary) 8%, transparent);
     width: min(440px, 100%);
     max-height: calc(100vh - 40px);
     overflow-y: auto;
     padding: 24px 22px 22px 22px;
-    animation: voqi-picker-card-in 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    animation: aelios-spark-picker-card-in 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .picker-close {
@@ -758,7 +758,7 @@ export const WIDGET_CSS = `
     height: 28px;
     border: 0;
     background: transparent;
-    color: var(--voqi-muted);
+    color: var(--aelios-spark-muted);
     cursor: pointer;
     border-radius: 8px;
     display: inline-flex;
@@ -767,12 +767,12 @@ export const WIDGET_CSS = `
     transition: color 120ms ease, background 120ms ease;
 }
 .picker-close:hover {
-    color: var(--voqi-text);
-    background: color-mix(in srgb, var(--voqi-text) 6%, transparent);
+    color: var(--aelios-spark-text);
+    background: color-mix(in srgb, var(--aelios-spark-text) 6%, transparent);
 }
 .picker-close:focus-visible {
     outline: none;
-    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--voqi-primary) 50%, transparent);
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--aelios-spark-primary) 50%, transparent);
 }
 
 .picker-title {
@@ -780,13 +780,13 @@ export const WIDGET_CSS = `
     font-size: 16px;
     font-weight: 700;
     letter-spacing: 0.005em;
-    color: var(--voqi-text);
+    color: var(--aelios-spark-text);
 }
 .picker-subtitle {
     margin: 0 0 16px 0;
     font-size: 13px;
     line-height: 1.45;
-    color: var(--voqi-muted);
+    color: var(--aelios-spark-muted);
 }
 
 /* Header row — title on the left, compact language pill on the right. */
@@ -799,8 +799,8 @@ export const WIDGET_CSS = `
     padding-right: 24px; /* room for the close button */
 }
 .picker-header .picker-title { margin: 0; }
-/* Language pill — uses the widget's own theme tokens (--voqi-bg /
-   --voqi-text / --voqi-primary) so the picker re-themes
+/* Language pill — uses the widget's own theme tokens (--aelios-spark-bg /
+   --aelios-spark-text / --aelios-spark-primary) so the picker re-themes
    automatically when the host page customises the widget. The dropdown
    menu lays all 37 languages out in a 3-column grid: every option is
    visible at once, no scrollbar, no overflow clipping. */
@@ -813,32 +813,32 @@ export const WIDGET_CSS = `
     align-items: center;
     gap: 6px;
     padding: 5px 10px;
-    background: color-mix(in srgb, var(--voqi-text) 6%, var(--voqi-bg));
-    border: 1px solid var(--voqi-border);
+    background: color-mix(in srgb, var(--aelios-spark-text) 6%, var(--aelios-spark-bg));
+    border: 1px solid var(--aelios-spark-border);
     border-radius: 999px;
-    color: color-mix(in srgb, var(--voqi-text) 75%, transparent);
+    color: color-mix(in srgb, var(--aelios-spark-text) 75%, transparent);
     cursor: pointer;
     font: inherit;
     line-height: 1;
     transition: background 180ms ease, color 180ms ease, border-color 180ms ease;
 }
 .picker-language-pill:hover {
-    background: color-mix(in srgb, var(--voqi-text) 12%, var(--voqi-bg));
-    color: var(--voqi-text);
-    border-color: var(--voqi-border-strong);
+    background: color-mix(in srgb, var(--aelios-spark-text) 12%, var(--aelios-spark-bg));
+    color: var(--aelios-spark-text);
+    border-color: var(--aelios-spark-border-strong);
 }
 .picker-language-pill:hover .picker-language-globe {
     transform: rotate(12deg);
 }
 .picker-language-pill:focus-visible {
     outline: none;
-    border-color: var(--voqi-primary);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--voqi-primary) 35%, transparent);
+    border-color: var(--aelios-spark-primary);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--aelios-spark-primary) 35%, transparent);
 }
 .picker-language-globe {
     width: 14px;
     height: 14px;
-    color: var(--voqi-primary);
+    color: var(--aelios-spark-primary);
     flex-shrink: 0;
     transition: transform 200ms ease;
 }
@@ -867,8 +867,8 @@ export const WIDGET_CSS = `
     padding: 6px;
     width: max-content;
     max-width: min(360px, calc(100vw - 60px));
-    background: color-mix(in srgb, var(--voqi-text) 6%, var(--voqi-bg));
-    border: 1px solid var(--voqi-border);
+    background: color-mix(in srgb, var(--aelios-spark-text) 6%, var(--aelios-spark-bg));
+    border: 1px solid var(--aelios-spark-border);
     border-radius: 12px;
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
     z-index: 2;
@@ -880,21 +880,21 @@ export const WIDGET_CSS = `
     width: 100%;
     box-sizing: border-box;
     padding: 6px 9px;
-    border: 1px solid var(--voqi-border);
+    border: 1px solid var(--aelios-spark-border);
     border-radius: 6px;
-    background: color-mix(in srgb, var(--voqi-text) 4%, var(--voqi-bg));
-    color: var(--voqi-text);
+    background: color-mix(in srgb, var(--aelios-spark-text) 4%, var(--aelios-spark-bg));
+    color: var(--aelios-spark-text);
     font: inherit;
     font-size: 12px;
     outline: none;
     transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 .picker-language-search::placeholder {
-    color: color-mix(in srgb, var(--voqi-text) 45%, transparent);
+    color: color-mix(in srgb, var(--aelios-spark-text) 45%, transparent);
 }
 .picker-language-search:focus {
-    border-color: color-mix(in srgb, var(--voqi-primary) 50%, transparent);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--voqi-primary) 18%, transparent);
+    border-color: color-mix(in srgb, var(--aelios-spark-primary) 50%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--aelios-spark-primary) 18%, transparent);
 }
 .picker-language-list {
     margin: 0;
@@ -910,18 +910,18 @@ export const WIDGET_CSS = `
     overflow-y: auto;
     /* Hide scrollbar visually but keep functionality. */
     scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--voqi-text) 20%, transparent) transparent;
+    scrollbar-color: color-mix(in srgb, var(--aelios-spark-text) 20%, transparent) transparent;
 }
 .picker-language-list::-webkit-scrollbar { width: 6px; }
 .picker-language-list::-webkit-scrollbar-thumb {
-    background: color-mix(in srgb, var(--voqi-text) 20%, transparent);
+    background: color-mix(in srgb, var(--aelios-spark-text) 20%, transparent);
     border-radius: 3px;
 }
 .picker-language-list li { margin: 0; padding: 0; }
 .picker-language-empty {
     padding: 12px 8px;
     text-align: center;
-    color: color-mix(in srgb, var(--voqi-text) 50%, transparent);
+    color: color-mix(in srgb, var(--aelios-spark-text) 50%, transparent);
     font-size: 11.5px;
 }
 .picker-language-option {
@@ -932,7 +932,7 @@ export const WIDGET_CSS = `
     padding: 5px 8px;
     border: 0;
     background: transparent;
-    color: color-mix(in srgb, var(--voqi-text) 80%, transparent);
+    color: color-mix(in srgb, var(--aelios-spark-text) 80%, transparent);
     cursor: pointer;
     font: inherit;
     text-align: left;
@@ -940,16 +940,16 @@ export const WIDGET_CSS = `
     transition: background 120ms ease, color 120ms ease;
 }
 .picker-language-option:hover {
-    background: color-mix(in srgb, var(--voqi-text) 10%, transparent);
-    color: var(--voqi-text);
+    background: color-mix(in srgb, var(--aelios-spark-text) 10%, transparent);
+    color: var(--aelios-spark-text);
 }
 .picker-language-option[data-active="true"] {
-    background: color-mix(in srgb, var(--voqi-primary) 16%, transparent);
-    color: var(--voqi-primary);
+    background: color-mix(in srgb, var(--aelios-spark-primary) 16%, transparent);
+    color: var(--aelios-spark-primary);
 }
 .picker-language-option:focus-visible {
     outline: none;
-    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--voqi-primary) 60%, transparent);
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--aelios-spark-primary) 60%, transparent);
 }
 .picker-language-option-flag { font-size: 13px; line-height: 1; flex-shrink: 0; }
 .picker-language-option-name {
@@ -982,8 +982,8 @@ export const WIDGET_CSS = `
     padding: 12px 16px;
     border: 0;
     border-radius: 12px;
-    background: var(--voqi-primary);
-    color: var(--voqi-on-primary);
+    background: var(--aelios-spark-primary);
+    color: var(--aelios-spark-on-primary);
     font: inherit;
     font-size: 13.5px;
     font-weight: 700;
@@ -992,13 +992,13 @@ export const WIDGET_CSS = `
     transition: background 120ms ease, transform 120ms ease;
 }
 .picker-start:hover {
-    background: color-mix(in srgb, var(--voqi-primary) 88%, var(--voqi-bg));
+    background: color-mix(in srgb, var(--aelios-spark-primary) 88%, var(--aelios-spark-bg));
     transform: translateY(-1px);
 }
 .picker-start:active { transform: translateY(0); }
 .picker-start:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--voqi-primary) 38%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--aelios-spark-primary) 38%, transparent);
 }
 
 .picker-options-stack {
@@ -1007,9 +1007,9 @@ export const WIDGET_CSS = `
     gap: 10px;
 }
 .picker-option-card {
-    border: 1px solid color-mix(in srgb, var(--voqi-text) 12%, transparent);
-    background: color-mix(in srgb, var(--voqi-text) 4%, var(--voqi-bg));
-    color: var(--voqi-text);
+    border: 1px solid color-mix(in srgb, var(--aelios-spark-text) 12%, transparent);
+    background: color-mix(in srgb, var(--aelios-spark-text) 4%, var(--aelios-spark-bg));
+    color: var(--aelios-spark-text);
     cursor: pointer;
     border-radius: 12px;
     padding: 14px 16px;
@@ -1022,33 +1022,33 @@ export const WIDGET_CSS = `
                 transform 120ms ease;
 }
 .picker-option-card:hover {
-    border-color: color-mix(in srgb, var(--voqi-primary) 55%, transparent);
-    background: color-mix(in srgb, var(--voqi-text) 8%, var(--voqi-bg));
+    border-color: color-mix(in srgb, var(--aelios-spark-primary) 55%, transparent);
+    background: color-mix(in srgb, var(--aelios-spark-text) 8%, var(--aelios-spark-bg));
     transform: translateY(-1px);
 }
 .picker-option-card:active { transform: translateY(0); }
 .picker-option-card:focus-visible {
     outline: none;
-    border-color: var(--voqi-primary);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--voqi-primary) 28%, transparent);
+    border-color: var(--aelios-spark-primary);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--aelios-spark-primary) 28%, transparent);
 }
 .picker-option-card-title {
     font-size: 14px;
     font-weight: 700;
     letter-spacing: 0.005em;
-    color: var(--voqi-text);
+    color: var(--aelios-spark-text);
 }
 .picker-option-card-body {
     font-size: 12.5px;
     line-height: 1.5;
-    color: var(--voqi-muted);
+    color: var(--aelios-spark-muted);
 }
 
-@keyframes voqi-picker-fade-in {
+@keyframes aelios-spark-picker-fade-in {
     from { opacity: 0; }
     to   { opacity: 1; }
 }
-@keyframes voqi-picker-card-in {
+@keyframes aelios-spark-picker-card-in {
     from { opacity: 0; transform: translateY(12px) scale(0.98); }
     to   { opacity: 1; transform: translateY(0) scale(1); }
 }
@@ -1074,7 +1074,7 @@ export const WIDGET_CSS = `
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
-    animation: voqi-cursor-in 220ms cubic-bezier(0.4, 0, 0.2, 1);
+    animation: aelios-spark-cursor-in 220ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .guide-cursor-pointer {
@@ -1088,7 +1088,7 @@ export const WIDGET_CSS = `
     filter:
         drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35))
         drop-shadow(0 0 6px rgba(59, 130, 246, 0.45));
-    animation: voqi-cursor-glow 1.6s ease-in-out infinite;
+    animation: aelios-spark-cursor-glow 1.6s ease-in-out infinite;
 }
 
 .guide-cursor-tag {
@@ -1115,7 +1115,7 @@ export const WIDGET_CSS = `
 }
 .guide-cursor-tag-text { color: #F4F5F7; }
 
-@keyframes voqi-cursor-glow {
+@keyframes aelios-spark-cursor-glow {
     0%, 100% {
         filter:
             drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35))
@@ -1127,7 +1127,7 @@ export const WIDGET_CSS = `
             drop-shadow(0 0 12px rgba(59, 130, 246, 0.7));
     }
 }
-@keyframes voqi-cursor-in {
+@keyframes aelios-spark-cursor-in {
     from { opacity: 0; transform: scale(0.7); transform-origin: top left; }
     to   { opacity: 1; transform: scale(1); transform-origin: top left; }
 }

@@ -1,4 +1,4 @@
-# Voqi agent-server tests
+# Aelios Spark agent-server tests
 
 Three layers, in increasing fidelity. Each layer exists for a different
 class of bug — running them all on every change is overkill, but the

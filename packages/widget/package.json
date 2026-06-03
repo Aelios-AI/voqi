@@ -1,7 +1,7 @@
 {
-  "name": "voqi-widget",
+  "name": "aelios-spark-widget",
   "version": "0.1.0",
-  "description": "Voqi voice widget — drop-in voice control for any web app.",
+  "description": "AeliosSpark voice widget — drop-in voice control for any web app.",
   "private": false,
   "type": "module",
   "scripts": {

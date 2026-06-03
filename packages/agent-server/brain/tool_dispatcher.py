@@ -164,7 +164,7 @@ class ToolDispatcher:
             # No per-tool deadline here — the processor's batch-timeout
             # handler is the single source of truth for "this took too
             # long". When that fires (default 60s, configurable via
-            # ``batch_timeout_seconds`` in ``voqi.config.yaml``), it
+            # ``batch_timeout_seconds`` in ``aelios-spark.config.yaml``), it
             # cancels this task via ``cancel_demonstration``, which
             # raises CancelledError below.
             data = await future

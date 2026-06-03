@@ -1,6 +1,6 @@
 # Quickstart
 
-Voqi has three moving pieces. To get a voice agent talking to your app
+Aelios Spark has three moving pieces. To get a voice agent talking to your app
 you need all three running at the same time. This guide assumes
 localhost — production hosting is up to you (or use
 the managed [Aelios AI](https://aeliosai.com) service).
@@ -30,12 +30,12 @@ cp .env.example .env
 
 uv sync
 uv run python server.py
-# 🎙️  Voqi agent server ready!
+# 🎙️  Aelios Spark agent server ready!
 #    → POST http://0.0.0.0:3002/start to begin a session
 ```
 
 The agent reads
-[`voqi.config.yaml`](../packages/agent-server/voqi.config.yaml) for
+[`aelios-spark.config.yaml`](../packages/agent-server/aelios-spark.config.yaml) for
 the system prompt, persona, and knowledge base. Edit that file to
 describe *your* software.
 
@@ -45,7 +45,7 @@ describe *your* software.
 cd packages/widget
 npm install
 npm run build
-# → dist/voqi-widget.js  (single IIFE, ~875 KB raw / ~245 KB gzipped)
+# → dist/aelios-spark-widget.js  (single IIFE, ~875 KB raw / ~245 KB gzipped)
 ```
 
 For active development, `npm run dev` rebuilds on save.
@@ -57,7 +57,7 @@ Easiest path: try the included example to see the full integration.
 ```bash
 cd examples/tracker
 npm install
-npm run copy-widget    # copies dist/voqi-widget.js → public/
+npm run copy-widget    # copies dist/aelios-spark-widget.js → public/
 npm run dev            # → http://localhost:5180
 ```
 
@@ -68,8 +68,8 @@ Open the page, click the launcher pill at the bottom-right, and try:
 - *"Assign EX-12 to Alice."*
 
 To embed in your own app, copy
-[`examples/tracker/src/voqi.ts`](../examples/tracker/src/voqi.ts) and
-[`examples/tracker/src/embedVoqiWidget.ts`](../examples/tracker/src/embedVoqiWidget.ts)
+[`examples/tracker/src/aelios-spark.ts`](../examples/tracker/src/aelios-spark.ts) and
+[`examples/tracker/src/embedAeliosSparkWidget.ts`](../examples/tracker/src/embedAeliosSparkWidget.ts)
 as starting points, then replace the tool definitions with your own
 functions. See [`tools.md`](tools.md) for the tool-writing guide.
 
@@ -89,11 +89,11 @@ processor's schema branches on it.
 ## Troubleshooting
 
 **Widget says "cannot resolve agent URL".** Set `data-agent-url` on
-the `<script>` tag or call `Voqi.configure({ agentUrl: "..." })` before
+the `<script>` tag or call `AeliosSpark.configure({ agentUrl: "..." })` before
 mount.
 
 **Agent connects but doesn't respond.** Check the agent server's
-stdout — Voqi logs everything to the terminal you started `bot.py`
+stdout — Aelios Spark logs everything to the terminal you started `bot.py`
 in. Most often this is a missing API key (look for 401 from
 OpenAI/Deepgram/Cartesia).
 

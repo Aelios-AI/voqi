@@ -91,22 +91,22 @@ logger.info("✅ All components loaded successfully!")
 
 
 def _resolve_config_path() -> Path:
-    """Resolve the Voqi config file. Order: VOQI_CONFIG env var → CWD
-    ``voqi.config.yaml`` → repo-root ``voqi.config.yaml``."""
-    explicit = os.getenv("VOQI_CONFIG")
+    """Resolve the AeliosSpark config file. Order: AELIOS_SPARK_CONFIG env var → CWD
+    ``aelios-spark.config.yaml`` → repo-root ``aelios-spark.config.yaml``."""
+    explicit = os.getenv("AELIOS_SPARK_CONFIG")
     if explicit:
         return Path(explicit).expanduser()
-    cwd = Path.cwd() / "voqi.config.yaml"
+    cwd = Path.cwd() / "aelios-spark.config.yaml"
     if cwd.exists():
         return cwd
-    return Path(__file__).parent / "voqi.config.yaml"
+    return Path(__file__).parent / "aelios-spark.config.yaml"
 
 
 def load_runtime_config(body: dict) -> dict:
     """Build the runtime-config dict from a local YAML file plus the
     widget-supplied session body. All agent configuration (persona,
     knowledge base, additional instructions) lives in
-    ``voqi.config.yaml`` next to this file; per-session choices (tools,
+    ``aelios-spark.config.yaml`` next to this file; per-session choices (tools,
     language, mode) come from the widget's ``/start`` POST.
 
     YAML schema::
@@ -124,8 +124,8 @@ def load_runtime_config(body: dict) -> dict:
     cfg_path = _resolve_config_path()
     if not cfg_path.exists():
         raise FileNotFoundError(
-            f"Voqi config not found at {cfg_path}. Set VOQI_CONFIG or "
-            "place voqi.config.yaml next to bot.py."
+            f"AeliosSpark config not found at {cfg_path}. Set AELIOS_SPARK_CONFIG or "
+            "place aelios-spark.config.yaml next to bot.py."
         )
 
     with cfg_path.open("r", encoding="utf-8") as f:
@@ -144,7 +144,7 @@ def load_runtime_config(body: dict) -> dict:
             if docs_path.exists():
                 docs = docs_path.read_text(encoding="utf-8")
             else:
-                logger.warning(f"[voqi] software.docs_file not found: {docs_path}")
+                logger.warning(f"[aelios-spark] software.docs_file not found: {docs_path}")
 
     return {
         "session_uuid": body.get("session_uuid", ""),
@@ -239,14 +239,14 @@ async def run_in_app_bot(runner_args: DailyRunnerArguments):
             context = LLMContext(messages)
 
             # Turn detection is opt-in via ``turn_detection: true`` in
-            # voqi.config.yaml. When enabled, Pipecat's local SmartTurn
+            # aelios-spark.config.yaml. When enabled, Pipecat's local SmartTurn
             # audio analyzer decides when the visitor's turn ends, so
             # VAD can be eager (shorter silence window) — SmartTurn
             # second-guesses any premature cut. When disabled, VAD is
             # the sole arbiter, so we give it a longer silence window
             # to avoid cutting the visitor off mid-thought.
             #
-            # SmartTurn only ships models for 21 of voqi's 37 widget
+            # SmartTurn only ships models for 21 of aelios-spark's 37 widget
             # languages. For the other 16 — Bulgarian, Croatian, Czech,
             # Greek, Gujarati, Hebrew, Hungarian, Kannada, Malay,
             # Romanian, Slovak, Swedish, Tagalog, Tamil, Telugu, Thai —
@@ -259,13 +259,13 @@ async def run_in_app_bot(runner_args: DailyRunnerArguments):
             turn_detection_enabled = bool(config_data.get("turn_detection"))
             if turn_detection_enabled and chosen_language_code in SMART_TURN_UNSUPPORTED:
                 logger.info(
-                    f"[voqi] turn_detection=true ignored for "
+                    f"[aelios-spark] turn_detection=true ignored for "
                     f"language={chosen_language_code} — SmartTurn doesn't "
                     f"support it; using VAD-only"
                 )
                 turn_detection_enabled = False
             if turn_detection_enabled:
-                logger.info(f"[voqi] turn detection enabled — using SmartTurn analyzer")
+                logger.info(f"[aelios-spark] turn detection enabled — using SmartTurn analyzer")
                 turn_stop_strategy = [
                     TurnAnalyzerUserTurnStopStrategy(
                         turn_analyzer=LocalSmartTurnAnalyzerV3(
@@ -274,7 +274,7 @@ async def run_in_app_bot(runner_args: DailyRunnerArguments):
                     ),
                 ]
             else:
-                logger.info(f"[voqi] turn detection disabled — using VAD-only strategy")
+                logger.info(f"[aelios-spark] turn detection disabled — using VAD-only strategy")
                 turn_stop_strategy = None
 
             user_aggregator, assistant_aggregator = LLMContextAggregatorPair(
@@ -314,7 +314,7 @@ async def run_in_app_bot(runner_args: DailyRunnerArguments):
             # Nova-3 accepts each one directly via the ``language``
             # enum on Settings (see DEEPGRAM_STT_LANGUAGES in
             # adapters/languages.py). ``keyterm`` biases recognition
-            # toward product names / jargon from voqi.config.yaml.
+            # toward product names / jargon from aelios-spark.config.yaml.
             speech_to_text = DeepgramSTTService(
                 api_key=os.getenv("DEEPGRAM_API_KEY"),
                 settings=DeepgramSTTService.Settings(
@@ -423,7 +423,7 @@ async def run_in_app_bot(runner_args: DailyRunnerArguments):
             try:
                 await daily_rest_helper.delete_room_by_url(runner_args.room_url)
             except Exception as e:
-                logger.error(f"[voqi] failed to delete Daily room: {e}")
+                logger.error(f"[aelios-spark] failed to delete Daily room: {e}")
 
             if not kickoff_watchdog_task.done():
                 kickoff_watchdog_task.cancel()

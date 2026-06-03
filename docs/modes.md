@@ -1,6 +1,6 @@
 # Modes — action vs guide
 
-Voqi runs in one of two modes per session. The visitor picks at
+Aelios Spark runs in one of two modes per session. The visitor picks at
 session start (via the language/mode picker in the widget UI); the
 choice is frozen for that session and shapes both what the agent is
 allowed to do and what schema the LLM sees on every turn.
@@ -21,7 +21,7 @@ allowed to do and what schema the LLM sees on every turn.
 ## Action mode
 
 The agent operates your software on the visitor's behalf by calling
-the tools you registered with `Voqi.defineTool(...)`.
+the tools you registered with `AeliosSpark.defineTool(...)`.
 
 ### What the agent can do per turn
 

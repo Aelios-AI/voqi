@@ -1,5 +1,5 @@
 import type {
-    VoqiMockControl,
+    AeliosSparkMockControl,
     InAppSessionStart,
 } from "./types";
 import type {
@@ -20,7 +20,7 @@ interface AutoBehavior {
  * ``IInAppTransport`` surface as the real Pipecat/Daily one, but
  * never opens a WebRTC connection or talks to any backend. Drives the
  * widget through scripted lifecycle events on a timer, and exposes a
- * manual control surface at ``window.__voqiMock`` so a developer
+ * manual control surface at ``window.__aeliosSparkMock`` so a developer
  * can fire transcripts, tool calls, and disconnects from the console.
  */
 export class MockInAppTransport implements IInAppTransport {
@@ -252,7 +252,7 @@ export class MockInAppTransport implements IInAppTransport {
     }
 
     /**
-     * Hang the manual control surface off ``window.__voqiMock`` so
+     * Hang the manual control surface off ``window.__aeliosSparkMock`` so
      * developers can drive the widget from the browser console. Each
      * call routes back into the regular event callbacks so the widget
      * processes mock events through exactly the same code paths as
@@ -260,7 +260,7 @@ export class MockInAppTransport implements IInAppTransport {
      */
     private installControlSurface(): void {
         if (typeof window === "undefined") return;
-        const ctl: VoqiMockControl = {
+        const ctl: AeliosSparkMockControl = {
             simulateUserSpeech: (text: string) => {
                 if (!this.connected) return;
                 const entry: TranscriptEntry = {
@@ -352,8 +352,8 @@ export class MockInAppTransport implements IInAppTransport {
         };
         // Touch the muted flag so TS doesn't flag it as unused — also
         // useful for tests that want to assert the mute state.
-        (ctl as VoqiMockControl & { isMuted: () => boolean }).isMuted = () =>
+        (ctl as AeliosSparkMockControl & { isMuted: () => boolean }).isMuted = () =>
             this.muted;
-        window.__voqiMock = ctl;
+        window.__aeliosSparkMock = ctl;
     }
 }

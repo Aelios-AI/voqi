@@ -1,11 +1,11 @@
 /**
- * Public types exposed to host pages via `window.Voqi`.
+ * Public types exposed to host pages via `window.AeliosSpark`.
  *
  * The host integrator sees only what's in here — keep it minimal so we can
  * evolve internals without breaking embeds.
  */
 
-export interface VoqiToolDefinition {
+export interface AeliosSparkToolDefinition {
     /** Stable identifier the agent uses to invoke this tool. */
     name: string;
     /**
@@ -36,7 +36,7 @@ export interface VoqiToolDefinition {
 }
 
 /**
- * Host-supplied configuration. Pass this to ``Voqi.configure({...})``
+ * Host-supplied configuration. Pass this to ``AeliosSpark.configure({...})``
  * before the widget mounts. Everything except ``agentUrl`` is optional.
  *
  * Only fields the widget actually renders are accepted. The language
@@ -44,8 +44,8 @@ export interface VoqiToolDefinition {
  * name / avatar / welcome message / named themes / software name /
  * logo are not currently wired up on the widget side.
  */
-export interface VoqiUserConfig {
-    /** URL of the running Voqi agent server (e.g. http://localhost:3002). */
+export interface AeliosSparkUserConfig {
+    /** URL of the running AeliosSpark agent server (e.g. http://localhost:3002). */
     agentUrl: string;
     branding?: {
         /** Pill anchor — bottom-right (default) or bottom-left. */
@@ -55,36 +55,36 @@ export interface VoqiUserConfig {
     };
 }
 
-export interface VoqiMountOptions {
+export interface AeliosSparkMountOptions {
     /** DOM node to mount into. Defaults to a new <div> appended to body. */
     container?: HTMLElement;
     /**
      * UI-only test mode. When true, both the local API and the realtime
      * transport are replaced with deterministic in-memory fakes — no
      * network calls, no agent server required. A manual control surface
-     * is exposed at ``window.__voqiMock`` for driving widget state from
+     * is exposed at ``window.__aeliosSparkMock`` for driving widget state from
      * the browser console. Can also be enabled via ``data-mock="true"``
      * on the script tag.
      */
     mock?: boolean;
 }
 
-export interface Voqi {
-    configure: (config: VoqiUserConfig) => void;
-    defineTool: (def: VoqiToolDefinition) => void;
-    mount: (opts?: VoqiMountOptions) => void;
+export interface AeliosSpark {
+    configure: (config: AeliosSparkUserConfig) => void;
+    defineTool: (def: AeliosSparkToolDefinition) => void;
+    mount: (opts?: AeliosSparkMountOptions) => void;
     unmount: () => void;
     open: () => void;
     close: () => void;
     /** Internal: queue drained on load. Host pushes init callbacks here. */
-    _queue?: Array<(api: Voqi) => void>;
+    _queue?: Array<(api: AeliosSpark) => void>;
 }
 
 /**
- * Manual control surface exposed at ``window.__voqiMock`` when the
+ * Manual control surface exposed at ``window.__aeliosSparkMock`` when the
  * widget is mounted in mock mode.
  */
-export interface VoqiMockControl {
+export interface AeliosSparkMockControl {
     simulateUserSpeech: (text: string) => void;
     simulateBotMessage: (text: string) => void;
     fireAgentReady: () => void;
@@ -112,9 +112,9 @@ export interface VoqiMockControl {
 
 declare global {
     interface Window {
-        Voqi?: Voqi;
-        VoqiReady?: Array<(api: Voqi) => void>;
-        __voqiMock?: VoqiMockControl;
+        AeliosSpark?: AeliosSpark;
+        AeliosSparkReady?: Array<(api: AeliosSpark) => void>;
+        __aeliosSparkMock?: AeliosSparkMockControl;
     }
 }
 
@@ -147,7 +147,7 @@ export interface InAppWidgetThemeColors {
 
 /**
  * Resolved config the widget's React tree reads. Only fields the
- * widget actually renders are here — see VoqiUserConfig for the
+ * widget actually renders are here — see AeliosSparkUserConfig for the
  * host-facing surface that maps into this.
  */
 export interface InAppWidgetConfig {

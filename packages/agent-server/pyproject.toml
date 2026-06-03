@@ -1,7 +1,7 @@
 [project]
-name = "voqi-agent-server"
+name = "aelios-spark-agent-server"
 version = "0.1.0"
-description = "Voqi voice agent server — runs the Pipecat-based agent that the Voqi widget connects to."
+description = "AeliosSpark voice agent server — runs the Pipecat-based agent that the AeliosSpark widget connects to."
 requires-python = ">=3.12,<3.13"
 dependencies = [
     # Pipecat with the providers the in-app loop uses: Daily transport

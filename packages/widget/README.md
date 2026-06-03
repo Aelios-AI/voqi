@@ -1,14 +1,14 @@
-# voqi-widget
+# aelios-spark-widget
 
-The browser-side of Voqi. A single IIFE bundle that drops onto any web
-page and exposes `window.Voqi` for tool registration + branding config.
+The browser-side of Aelios Spark. A single IIFE bundle that drops onto any web
+page and exposes `window.AeliosSpark` for tool registration + branding config.
 
 ## Build
 
 ```bash
 npm install
 npm run build
-# → dist/voqi-widget.js
+# → dist/aelios-spark-widget.js
 ```
 
 `npm run dev` rebuilds on save.
@@ -20,7 +20,7 @@ npm run build
 - Manages the connection lifecycle to the agent server (Daily WebRTC,
   with cold-start retry)
 - Hosts the tool registry — host pages register callable functions via
-  `Voqi.defineTool({...})`
+  `AeliosSpark.defineTool({...})`
 - Captures DOM screenshots on demand (lazy-loaded `html2canvas-pro`)
   for screen-aware modes
 - Renders the transcript bubble + status states (listening, thinking,
@@ -30,18 +30,18 @@ npm run build
 
 ```ts
 // Global, set by the loaded bundle
-window.Voqi = {
-    configure(config: VoqiUserConfig): void;
-    defineTool(def: VoqiToolDefinition): void;
-    mount(opts?: VoqiMountOptions): void;
+window.AeliosSpark = {
+    configure(config: AeliosSparkUserConfig): void;
+    defineTool(def: AeliosSparkToolDefinition): void;
+    mount(opts?: AeliosSparkMountOptions): void;
     unmount(): void;
     open(): void;
     close(): void;
 };
 
 // Pre-load queue — push callbacks that run when the bundle finishes
-window.VoqiReady = window.VoqiReady ?? [];
-window.VoqiReady.push((Voqi) => { /* ... */ });
+window.AeliosSparkReady = window.AeliosSparkReady ?? [];
+window.AeliosSparkReady.push((AeliosSpark) => { /* ... */ });
 ```
 
 See [`src/types.ts`](src/types.ts) for full type definitions and
@@ -51,7 +51,7 @@ schema.
 ## Embedding
 
 ```html
-<script src="/voqi-widget.js"
+<script src="/aelios-spark-widget.js"
         data-agent-url="http://localhost:3002/start"
         data-auto-mount="true"
         data-mock="false"></script>
@@ -60,25 +60,25 @@ schema.
 | Attribute | Notes |
 |---|---|
 | `data-agent-url` | Required. Where the agent server's `/start` lives. |
-| `data-auto-mount` | Defaults to `true`. Set `false` to call `Voqi.mount()` yourself. |
+| `data-auto-mount` | Defaults to `true`. Set `false` to call `AeliosSpark.mount()` yourself. |
 | `data-mock` | Set `true` for UI-only mode (no network, no agent). |
 
 Auth between widget and agent server is purely origin-based — set
-`VOQI_ALLOWED_ORIGINS` on the agent server to the domains hosting your
+`AELIOS_SPARK_ALLOWED_ORIGINS` on the agent server to the domains hosting your
 widget, and the browser does the rest. No tokens to coordinate.
 
 Anything you'd set via attributes can equivalently be set with
-`Voqi.configure({...})` — see [`docs/configuration.md`](../../docs/configuration.md).
+`AeliosSpark.configure({...})` — see [`docs/configuration.md`](../../docs/configuration.md).
 
 ## Mock mode
 
 ```html
-<script src="/voqi-widget.js" data-mock="true"></script>
+<script src="/aelios-spark-widget.js" data-mock="true"></script>
 ```
 
 Replaces the API + transport with deterministic fakes. Use it to
 exercise the widget UI without running the agent server. A console
-control surface lives at `window.__voqiMock` — see
+control surface lives at `window.__aeliosSparkMock` — see
 [`src/types.ts`](src/types.ts) for the available helpers.
 
 ## Bundling notes

@@ -108,7 +108,7 @@ HEARTBEAT_CHECK_INTERVAL_SECONDS = 5.0
 REPLY_WATCHDOG_SECONDS = 15.0
 
 # Built-in default OpenAI model id; deployments override via
-# ``llm_model:`` in ``voqi.config.yaml``.
+# ``llm_model:`` in ``aelios-spark.config.yaml``.
 OPENAI_MODEL = "gpt-5.4"
 
 # Hard upper bound on how long a single tool batch may take to fully
@@ -116,7 +116,7 @@ OPENAI_MODEL = "gpt-5.4"
 # still-pending tools with an error message and feed the partial result
 # set to the next inference. Same shape as a normal TOOL_BATCH_COMPLETED.
 # Built-in default; deployments override via ``batch_timeout_seconds:``
-# in ``voqi.config.yaml``.
+# in ``aelios-spark.config.yaml``.
 BATCH_TIMEOUT_SECONDS = 60.0
 
 # How many times we'll retry a TOOL_BATCH_COMPLETED inference before
@@ -131,7 +131,7 @@ INFERENCE_RETRY_LIMIT = int(
 # loops where the LLM keeps queueing follow-up batches forever. When the
 # next batch would exceed this we apologise and force end_current.
 # Built-in default; deployments override via
-# ``max_tool_batches_per_demonstration:`` in ``voqi.config.yaml``.
+# ``max_tool_batches_per_demonstration:`` in ``aelios-spark.config.yaml``.
 MAX_TOOL_BATCHES_PER_DEMONSTRATION = 8
 
 # Idle session timeout (visitor went quiet on the page). The widget is
@@ -425,7 +425,7 @@ class InAppAgentProcessor(FrameProcessor):
         self._kickoff_received_event = kickoff_received_event
         # Session analytics — populated as the conversation flows, then
         # snapshotted at session end via :meth:`get_session_data`. OSS
-        # Voqi doesn't POST these anywhere by default; wire your own
+        # AeliosSpark doesn't POST these anywhere by default; wire your own
         # analytics sink into bot.py's outer ``finally`` if you want
         # them. Kept on the processor (not a side channel) so the data
         # is always live with the in-flight conversation state.
@@ -445,14 +445,14 @@ class InAppAgentProcessor(FrameProcessor):
         # so concurrent test scenarios mutating them via the harness
         # can't corrupt each other's runtime behaviour.
         # Built-in default, optionally overridden by
-        # ``max_tool_batches_per_demonstration`` from ``voqi.config.yaml``.
+        # ``max_tool_batches_per_demonstration`` from ``aelios-spark.config.yaml``.
         self._max_tool_batches_per_demonstration = (
             runtime_config.max_tool_batches_per_demonstration
             if runtime_config.max_tool_batches_per_demonstration is not None
             else MAX_TOOL_BATCHES_PER_DEMONSTRATION
         )
         # Built-in default, optionally overridden by
-        # ``batch_timeout_seconds`` from ``voqi.config.yaml``.
+        # ``batch_timeout_seconds`` from ``aelios-spark.config.yaml``.
         self._batch_timeout_seconds = (
             runtime_config.batch_timeout_seconds
             if runtime_config.batch_timeout_seconds is not None
@@ -500,7 +500,7 @@ class InAppAgentProcessor(FrameProcessor):
         # ``with_structured_output`` against a schema built for the
         # current wake reason (see :func:`build_in_app_schema`).
         # Built-in model default, optionally overridden by ``llm_model:``
-        # in ``voqi.config.yaml``.
+        # in ``aelios-spark.config.yaml``.
         self._llm = ChatOpenAI(
             model=runtime_config.llm_model or OPENAI_MODEL,
             api_key=os.getenv("OPENAI_API_KEY"),
@@ -1627,7 +1627,7 @@ class InAppAgentProcessor(FrameProcessor):
 
         structured_llm = self._llm.with_structured_output(
             {
-                "name": "voqi_agent_output",
+                "name": "aelios-spark_agent_output",
                 "description": (
                     "Single structured decision for the in-app agent: "
                     "speech, tool invocations, and (on user-input turns) "
@@ -3641,7 +3641,7 @@ class InAppAgentProcessor(FrameProcessor):
         # outer ``finally`` block (after ``runner.run(task)`` completes)
         # — not from this method. POSTing during tear-down is fragile
         # (aiohttp session may already be closing, processor may be
-        # mid-cancel). OSS Voqi ships no analytics POST by default; the
+        # mid-cancel). OSS AeliosSpark ships no analytics POST by default; the
         # snapshot is available via :meth:`get_session_data`.
 
     def _record_message_for_analytics(self, message: dict) -> None:
@@ -3685,7 +3685,7 @@ class InAppAgentProcessor(FrameProcessor):
         )
 
     def get_session_data(self) -> dict:
-        """Snapshot of session-end analytics state. OSS Voqi doesn't
+        """Snapshot of session-end analytics state. OSS AeliosSpark doesn't
         POST these anywhere by default; hook this from bot.py's outer
         ``finally`` block if you want to ship them to your analytics
         sink."""

@@ -16,8 +16,8 @@ import "./index";
 // auto-mount path looks for a script tag with data-public-key — in
 // source-import dev mode there is none, so it bails (logging a
 // harmless console error). We mount explicitly here with mock:true.
-window.VoqiReady = window.VoqiReady || [];
-window.VoqiReady.push((api) => {
+window.AeliosSparkReady = window.AeliosSparkReady || [];
+window.AeliosSparkReady.push((api) => {
     api.defineTool({
         name: "list_tasks",
         description: "List tasks",

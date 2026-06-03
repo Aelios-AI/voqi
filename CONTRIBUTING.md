@@ -1,6 +1,6 @@
-# Contributing to Voqi
+# Contributing to Aelios Spark
 
-Thanks for considering a contribution. Voqi is a real OSS project
+Thanks for considering a contribution. Aelios Spark is a real OSS project
 backed by a real production agent loop — every change touches code
 that runs in real-time voice sessions, so we ask for some discipline.
 
@@ -8,7 +8,7 @@ that runs in real-time voice sessions, so we ask for some discipline.
 
 Read these in order:
 
-1. [`README.md`](README.md) — what Voqi is, how to run it
+1. [`README.md`](README.md) — what Aelios Spark is, how to run it
 2. [`docs/architecture.md`](docs/architecture.md) — how the system
    works under the hood
 3. [`docs/modes.md`](docs/modes.md) — the two operating modes
@@ -26,8 +26,8 @@ that aren't visible from the diff alone.
 You need **Node 20+**, **Python 3.12**, and [**uv**](https://docs.astral.sh/uv/).
 
 ```bash
-git clone https://github.com/Aelios-AI/voqi
-cd voqi
+git clone https://github.com/Aelios-AI/aelios-spark
+cd aelios-spark
 
 # Agent server
 cd packages/agent-server
@@ -38,7 +38,7 @@ uv run pytest -q           # should print "440 passed"
 # Widget
 cd ../widget
 npm install
-npm run build              # → dist/voqi-widget.js
+npm run build              # → dist/aelios-spark-widget.js
 
 # Example app — full end-to-end smoke test
 cd ../../examples/tracker
@@ -67,7 +67,7 @@ commands ("list tasks", "create a task"), the system is healthy.
 | Widget UI polish + accessibility (Shadow-DOM contained) | | ✅ |
 | Editing `canned_speech.py` (multilingual, user-visible copy) | | ✅ |
 | Changes to the 37-language picker or `adapters/languages.py` (touches STT / TTS voice mapping) | | ✅ |
-| Changing the five host-overridable CSS tokens or `VoqiUserConfig` surface (public API for embedders) | | ✅ |
+| Changing the five host-overridable CSS tokens or `AeliosSparkUserConfig` surface (public API for embedders) | | ✅ |
 | Changes to the structured-output schema (`agent_output.py`) | | ✅ |
 | Changes to the master Jinja system-prompt template | | ✅ |
 | Changes to the priority queue ordering / wake-mode set / wake priorities | | ✅ |
@@ -94,7 +94,7 @@ and rejected) accelerates the review.
 - Line length 100, sorted imports, double quotes preferred.
 - **Type hints** on every public function. The processor is a
   state-machine — readers rely on types to navigate it.
-- **No `print`** in production paths — use `loguru`. Voqi's default
+- **No `print`** in production paths — use `loguru`. Aelios Spark's default
   sink is stdout (no file-rotating handler); structured logging
   still matters so you can grep + filter.
 - **Docstrings** on every non-trivial method, especially in
@@ -126,7 +126,7 @@ and rejected) accelerates the review.
 
 ## Testing requirements
 
-Voqi has three test layers — see
+Aelios Spark has three test layers — see
 [`packages/agent-server/tests/README.md`](packages/agent-server/tests/README.md)
 for the full breakdown. **Every PR must:**
 

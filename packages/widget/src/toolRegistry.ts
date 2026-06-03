@@ -1,5 +1,5 @@
 import type {
-    VoqiToolDefinition,
+    AeliosSparkToolDefinition,
     InAppWidgetTool,
     ToolResultClientMessage,
 } from "./types";
@@ -13,7 +13,7 @@ export interface BatchedToolCall {
 
 /**
  * In-memory map of tool name → host-supplied callback. Populated by the host
- * page via `Voqi.defineTool(...)`. The runtime looks up here whenever the
+ * page via `AeliosSpark.defineTool(...)`. The runtime looks up here whenever the
  * agent emits a `tool_call` message.
  *
  * This mirrors the host-trusting philosophy of OpenAI's
@@ -22,7 +22,7 @@ export interface BatchedToolCall {
  * logic.
  */
 export class ToolRegistry {
-    private readonly tools = new Map<string, VoqiToolDefinition>();
+    private readonly tools = new Map<string, AeliosSparkToolDefinition>();
     private readonly invocationLog: Array<{
         toolName: string;
         args: unknown;
@@ -30,14 +30,14 @@ export class ToolRegistry {
         timestamp: string;
     }> = [];
 
-    define(def: VoqiToolDefinition): void {
+    define(def: AeliosSparkToolDefinition): void {
         if (!def?.name || typeof def.execute !== "function") {
-            console.error("[Voqi] defineTool requires { name, execute }", def);
+            console.error("[AeliosSpark] defineTool requires { name, execute }", def);
             return;
         }
         if (this.tools.has(def.name)) {
             console.warn(
-                `[Voqi] defineTool overwriting existing registration for "${def.name}"`,
+                `[AeliosSpark] defineTool overwriting existing registration for "${def.name}"`,
             );
         }
         this.tools.set(def.name, def);
@@ -47,7 +47,7 @@ export class ToolRegistry {
         return this.tools.has(name);
     }
 
-    list(): VoqiToolDefinition[] {
+    list(): AeliosSparkToolDefinition[] {
         return Array.from(this.tools.values());
     }
 

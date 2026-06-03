@@ -1,7 +1,7 @@
-# voqi-agent-server
+# aelios-spark-agent-server
 
 The Python voice agent server. Hosts a Pipecat-based pipeline (STT →
-LLM with structured-output tool calls → TTS) that the Voqi widget
+LLM with structured-output tool calls → TTS) that the Aelios Spark widget
 connects to over WebRTC.
 
 ## Run
@@ -13,13 +13,13 @@ cp .env.example .env
 
 uv sync
 uv run python server.py
-# 🎙️  Voqi agent server ready!
+# 🎙️  Aelios Spark agent server ready!
 #    → POST http://0.0.0.0:3002/start to begin a session
 ```
 
 The server reads agent configuration (persona, special instructions,
 knowledge base) from
-[`voqi.config.yaml`](voqi.config.yaml) — edit that for your app.
+[`aelios-spark.config.yaml`](aelios-spark.config.yaml) — edit that for your app.
 
 ## Endpoints
 
@@ -32,7 +32,7 @@ knowledge base) from
 ```mermaid
 flowchart LR
     widget["Widget (browser)"]
-    subgraph server["Voqi agent server"]
+    subgraph server["Aelios Spark agent server"]
         direction TB
         api["server.py<br/>/start"]
         bot["bot.py<br/>Pipecat pipeline"]
@@ -58,7 +58,7 @@ data channel.
 .
 ├── server.py                       FastAPI app with /start — provisions a Daily room and runs one bot pipeline in-process per session (asyncio task)
 ├── bot.py                          assembles the voice pipeline — wires STT → InAppAgentProcessor → TTS → transport
-├── voqi.config.yaml                per-deployment config (agent persona, software KB, additional instructions, speech keywords, turn-detection toggle)
+├── aelios-spark.config.yaml                per-deployment config (agent persona, software KB, additional instructions, speech keywords, turn-detection toggle)
 │
 ├── brain/                          the agent loop — LLM call, tool dispatch, state machine
 │   ├── processor.py                the main FrameProcessor — priority queue, five wake modes, streaming inference, interruption, idle timer, watchdogs
@@ -94,11 +94,11 @@ data channel.
 See [`docs/configuration.md`](../../docs/configuration.md) at the repo
 root. Two files matter:
 
-- **`voqi.config.yaml`** — agent persona, host software name + TLDR,
+- **`aelios-spark.config.yaml`** — agent persona, host software name + TLDR,
   knowledge base (inline `docs:` or path via `docs_file:`), additional
   instructions, speech-keyword bias, turn-detection toggle (language
   and mode are NOT here — the visitor picks both at session start)
-- **`.env`** — provider API keys, optional `VOQI_ALLOWED_ORIGINS`,
+- **`.env`** — provider API keys, optional `AELIOS_SPARK_ALLOWED_ORIGINS`,
   tuning knobs
 
 ## Auth
@@ -111,10 +111,10 @@ coordinate.
 
 ```bash
 # Localhost demo — allow anything (default)
-# VOQI_ALLOWED_ORIGINS unset → "*"
+# AELIOS_SPARK_ALLOWED_ORIGINS unset → "*"
 
 # Production
-VOQI_ALLOWED_ORIGINS=https://app.example.com,https://staging.example.com
+AELIOS_SPARK_ALLOWED_ORIGINS=https://app.example.com,https://staging.example.com
 ```
 
 For server-to-server use (curl, integration tests), there's no Origin

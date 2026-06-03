@@ -10,9 +10,9 @@ not for getting it running (see [`quickstart.md`](quickstart.md)).
 ┌──────────────────────────────┐         ┌──────────────────────────┐
 │   BROWSER                    │         │   YOUR MACHINE / VPS     │
 │   ┌──────────────────────┐   │ /start  │  ┌────────────────────┐  │
-│   │ Voqi widget          │ ─────────────►│ Voqi agent server  │  │
+│   │ Aelios Spark widget          │ ─────────────►│ Aelios Spark agent server  │  │
 │   │  + your defineTool() │   │ WebRTC  │  │  (FastAPI + bot.py)│  │
-│   │  + Voqi.configure()  │ ◄══════════►  │                    │  │
+│   │  + AeliosSpark.configure()  │ ◄══════════►  │                    │  │
 │   └──────────────────────┘   │         │  └─────────┬──────────┘  │
 └──────────────────────────────┘         │            │             │
                                          │  ┌─────────▼──────────┐  │
@@ -100,7 +100,7 @@ works.
 
 ### Conditional prompting
 
-Voqi uses one technique across the whole agent loop: **conditional
+Aelios Spark uses one technique across the whole agent loop: **conditional
 prompting**. Both the prompt the LLM reads and the schema it must
 answer with are rebuilt every round, conditioned on the current
 state. The model never sees rules that don't apply this turn, and
@@ -291,7 +291,7 @@ actually addressing the agent.
 
 ## Tool dispatcher
 
-How Voqi turns "the agent wants to do something in your app" into
+How Aelios Spark turns "the agent wants to do something in your app" into
 actual JavaScript running in the browser. Three concepts stack:
 
 ```
@@ -330,14 +330,14 @@ Two guardrails on demonstrations:
   If the agent hits that cap, the demonstration is force-ended with
   the canned `BATCH_CEILING_HIT` line to the visitor. Prevents
   runaway loops. Override per deployment via
-  `max_tool_batches_per_demonstration:` in `voqi.config.yaml`.
+  `max_tool_batches_per_demonstration:` in `aelios-spark.config.yaml`.
 - **Clean boundaries**: starting a new demonstration cancels any
   in-flight batch from the previous one. The agent can't be "doing"
   two things at once.
 
 ### Batch — the tool calls in one inference round
 
-A **batch** is the unit Voqi ships tool calls in. When the model
+A **batch** is the unit Aelios Spark ships tool calls in. When the model
 returns `tool_invocations: [...]` on an inference round, every entry
 in that list is part of the same batch. They share a `batch_id`; each
 has its own `call_id`.
@@ -348,7 +348,7 @@ one turn.
 
 **Multiple tool invocations per batch is the interesting case.**
 Most tool-using agents call one tool at a time, waiting for each
-result. Voqi lets the model dispatch *multiple* calls in one batch
+result. Aelios Spark lets the model dispatch *multiple* calls in one batch
 when they're genuinely independent — *"mark EX-12 and EX-14 both
 as in-progress"* fires `update_status` on each ticket in parallel,
 or *"show me my tasks and my open invoices"* runs `list_tasks` and
@@ -402,7 +402,7 @@ demonstration carries at most one open batch at a time.
 3. The dispatcher tracks which `call_id`s have reported back. The
    batch is **complete** when every call_id has a result. If the
    per-batch timeout (built-in default 60s, override via
-   `batch_timeout_seconds:` in `voqi.config.yaml`) elapses with any
+   `batch_timeout_seconds:` in `aelios-spark.config.yaml`) elapses with any
    call still unreported, the dispatcher marks stragglers as
    `error: "timeout"` and resolves the batch anyway.
 4. On resolution, the dispatcher fires a single
@@ -414,7 +414,7 @@ demonstration carries at most one open batch at a time.
 If the visitor speaks (or types) while a batch is mid-flight:
 
 - Tools already dispatched to the widget **keep running**. Their
-  side effects already happened in your code; Voqi doesn't try to
+  side effects already happened in your code; Aelios Spark doesn't try to
   roll them back. If you don't want a tool firing unless the
   visitor consents, mark it `requiresConfirmation: true` (see
   below).
@@ -433,7 +433,7 @@ If the visitor speaks (or types) while a batch is mid-flight:
 
 A tool invocation is one `{call_id, name, args}` entry within a
 batch. Its `name` must match a tool the host page registered with
-`Voqi.defineTool(...)`. Its `args` must conform to that tool's
+`AeliosSpark.defineTool(...)`. Its `args` must conform to that tool's
 declared `parameters` JSON Schema (the LLM uses
 `with_structured_output` against the schema, so malformed args are
 rare).
@@ -451,7 +451,7 @@ malformed"*).
 Some tools the agent shouldn't fire without the visitor's explicit
 go-ahead — deleting records, sending messages, taking irreversible
 actions. Mark those `requiresConfirmation: true` when you register
-them with `Voqi.defineTool(...)`. The agent then *proposes* the batch
+them with `AeliosSpark.defineTool(...)`. The agent then *proposes* the batch
 instead of dispatching it.
 
 Full lifecycle:
@@ -572,7 +572,7 @@ doesn't reply in 2 seconds, the future resolves with an error and
 the wake fires anyway (so the LLM can still respond, just without
 the visual).
 
-The widget's own `[data-voqi-host]` element is excluded from capture
+The widget's own `[data-aelios-spark-host]` element is excluded from capture
 so the widget never sees itself in the screenshot.
 
 ## Conversation history
@@ -593,7 +593,7 @@ timers are constants in `Widget.tsx`.
 | Watcher | Where | Default | What it does |
 |---|---|---|---|
 | Reply watchdog | server | 15s | If the LLM round doesn't produce output in 15s, fires a system wake that speaks a canned "still thinking" recovery and re-inferences. |
-| Batch timeout | server | 60s (default) | If a dispatched tool batch has any call_id unreported after the timeout, marks stragglers as `error: "timeout"` and resolves the batch. Override per deployment via `batch_timeout_seconds:` in `voqi.config.yaml`. |
+| Batch timeout | server | 60s (default) | If a dispatched tool batch has any call_id unreported after the timeout, marks stragglers as `error: "timeout"` and resolves the batch. Override per deployment via `batch_timeout_seconds:` in `aelios-spark.config.yaml`. |
 | Heartbeat timeout | server | 60s | If the widget stops sending heartbeats for 60s, the server pushes `CancelTaskFrame` upstream and the session terminates. |
 | Idle warning | server | 120s | After 120s of no valid user input, speaks the `IDLE_WARNING` canned line. |
 | Idle grace | server | 60s after warning | If still no valid input, speaks `SESSION_IDLE_GOODBYE` and fires `session_ending` with reason `idle_grace_elapsed`. |
@@ -602,7 +602,7 @@ timers are constants in `Widget.tsx`.
 | Widget session hard cap | widget | 90 min | The widget self-terminates 10 min before the server backstop, so the visitor never experiences the backstop in normal operation. |
 | Widget connecting timeout | widget | 6 min | If the WebRTC handshake never reaches `agent_ready`, flip pill to `failed`. |
 | Inference retry | server | 3 attempts | If the LLM throws or returns malformed structured output, the same round retries up to 3 times. On the (cap+1)-th failure, the agent force-ends the demonstration with a canned apology. |
-| Max batches per demonstration | server | 8 (default) | Forces `end_current` once the cap is reached to prevent runaway loops. Override per deployment via `max_tool_batches_per_demonstration:` in `voqi.config.yaml`. |
+| Max batches per demonstration | server | 8 (default) | Forces `end_current` once the cap is reached to prevent runaway loops. Override per deployment via `max_tool_batches_per_demonstration:` in `aelios-spark.config.yaml`. |
 | Screenshot capture | widget | 2s | Per-capture deadline in `screenshot.ts`. Resolves with an error payload on miss. |
 | Screenshot service timeout | server | 2s | The server's matching deadline on the request-response pair. Resolves the agent's awaited future with `None` so the wake still fires. |
 | Kickoff timeout | server | 5 min | If the widget never connects after `/start` succeeds, the bot self-kills. |
@@ -630,7 +630,7 @@ where the LLM shouldn't be in the loop:
   maximum allowed number of tool batches. Spoken right before the
   demonstration is cleared.
 
-Each key has translations for every language Voqi supports; the
+Each key has translations for every language Aelios Spark supports; the
 processor picks the right translation per session.
 
 ## RTVI custom messages

@@ -1,13 +1,13 @@
 # Configuration
 
-Voqi has three configuration surfaces. Together they replace what a
+Aelios Spark has three configuration surfaces. Together they replace what a
 managed control plane would normally serve.
 
 | | Where it lives | What you set there |
 |---|---|---|
-| **Widget config** | host app JS, via `Voqi.configure({...})` | Agent server URL, pill position, theme colors |
-| **Tool registrations** | host app JS, via `Voqi.defineTool({...})` | The callable functions the agent can invoke during a session |
-| **Agent config** | `packages/agent-server/voqi.config.yaml` | Persona, additional instructions, knowledge base, speech-keyword bias, turn-detection toggle, plus per-deployment runtime knobs (LLM model id, per-batch tool timeout, max tool batches per demonstration) |
+| **Widget config** | host app JS, via `AeliosSpark.configure({...})` | Agent server URL, pill position, theme colors |
+| **Tool registrations** | host app JS, via `AeliosSpark.defineTool({...})` | The callable functions the agent can invoke during a session |
+| **Agent config** | `packages/agent-server/aelios-spark.config.yaml` | Persona, additional instructions, knowledge base, speech-keyword bias, turn-detection toggle, plus per-deployment runtime knobs (LLM model id, per-batch tool timeout, max tool batches per demonstration) |
 
 The split is intentional. Branding and tool definitions live in your
 app's frontend code because they're part of your product surface — the
@@ -18,7 +18,7 @@ the agent, because that's where the LLM call actually happens.
 ## Widget config
 
 ```ts
-Voqi.configure({
+AeliosSpark.configure({
     // Required: where your agent server is running.
     agentUrl: "https://agent.example.com/start",
 
@@ -43,8 +43,8 @@ the widget renders its own minimal chrome and ships a hardcoded
 
 ### Theme colors
 
-`themeColors` writes four CSS custom properties (`--voqi-primary`,
-`--voqi-bg`, `--voqi-text`, `--voqi-muted`, `--voqi-on-primary`) inside
+`themeColors` writes four CSS custom properties (`--aelios-spark-primary`,
+`--aelios-spark-bg`, `--aelios-spark-text`, `--aelios-spark-muted`, `--aelios-spark-on-primary`) inside
 the widget's Shadow DOM. Omit to use the default dark palette.
 
 ### Languages
@@ -55,12 +55,12 @@ the widget sends the chosen `language` code in the `/start` body.
 Deepgram Nova-3 handles STT for all 37 languages directly via the
 per-session `language` enum; Cartesia TTS auto-picks a voice per
 language (all bundled voices are female — pick a feminine `agent.name`
-in `voqi.config.yaml` to match). See
+in `aelios-spark.config.yaml` to match). See
 [`adapters/languages.py`](../packages/agent-server/adapters/languages.py)
 for the widget-code → Deepgram `Language` enum and Cartesia voice maps,
 plus the full alphabetical list.
 
-## Tool registrations — `Voqi.defineTool({...})`
+## Tool registrations — `AeliosSpark.defineTool({...})`
 
 Tools are the functions the agent can call during a session — *create a
 task*, *navigate to a screen*, *send a message*. They are **not**
@@ -69,7 +69,7 @@ next to the app code they operate on, and get registered with the
 widget at load time:
 
 ```js
-Voqi.defineTool({
+AeliosSpark.defineTool({
     name: "create_task",
     description: "Create a new task. Use when the user says 'add', 'create', or names a new piece of work.",
     parameters: {
@@ -100,7 +100,7 @@ Why frontend JS and not a config file:
   credentials.
 
 Tools accumulate in an in-memory registry inside the widget. Define as
-many as you want, in any order, before or after `Voqi.configure(...)`.
+many as you want, in any order, before or after `AeliosSpark.configure(...)`.
 The registry is snapshotted and sent to the agent server when the
 visitor clicks Start.
 
@@ -108,7 +108,7 @@ Full tool-writing guide — when to use `requiresConfirmation`, how to
 shape return values, parallel batches, error handling, common patterns
 — in [`tools.md`](tools.md).
 
-## Agent config — `voqi.config.yaml`
+## Agent config — `aelios-spark.config.yaml`
 
 ```yaml
 agent:
@@ -170,7 +170,7 @@ llm_model: "gpt-5.4"
 
 ### Swapping STT / TTS providers
 
-Voqi defaults to Deepgram Nova-3 (STT for all 37 widget languages)
+Aelios Spark defaults to Deepgram Nova-3 (STT for all 37 widget languages)
 and Cartesia (TTS) because those are what we've learned to be the
 best. Both are drop-in Pipecat adapters, so swapping is straightforward:
 open `packages/agent-server/bot.py`, find the STT or TTS factory line,
@@ -200,7 +200,7 @@ retrieval for large KBs.
 
 ### Additional instructions
 
-This is **not** the full system prompt — Voqi renders the actual
+This is **not** the full system prompt — Aelios Spark renders the actual
 system prompt from a template (persona + software docs + tools list +
 turn-handling rules). Anything you put under `additional_instructions`
 is concatenated into that template as one extra block. Use it for:
@@ -221,16 +221,16 @@ sees them on every turn.
 | `DEEPGRAM_API_KEY` | yes | — | STT — Nova-3 covers all 37 widget languages |
 | `CARTESIA_API_KEY` | yes | — | Agent voice (TTS) |
 | `GOOGLE_API_KEY` | yes | — | Gemini for conversation-history summarisation |
-| `VOQI_ALLOWED_ORIGINS` | optional | `*` (open) | Comma-separated CORS allowlist for the widget's host domains |
-| `VOQI_CONFIG` | optional | `./voqi.config.yaml` | Override config file path |
+| `AELIOS_SPARK_ALLOWED_ORIGINS` | optional | `*` (open) | Comma-separated CORS allowlist for the widget's host domains |
+| `AELIOS_SPARK_CONFIG` | optional | `./aelios-spark.config.yaml` | Override config file path |
 
 ## Where the data flows
 
-1. Browser loads `voqi-widget.js`.
-2. Widget reads `data-agent-url` (or `Voqi.configure({ agentUrl })`).
+1. Browser loads `aelios-spark-widget.js`.
+2. Widget reads `data-agent-url` (or `AeliosSpark.configure({ agentUrl })`).
 3. Visitor clicks Start → widget POSTs to `${agentUrl}/start` with the
    registered tools, the chosen language, and the chosen mode.
-4. Agent server reads `voqi.config.yaml`, merges with the widget body,
+4. Agent server reads `aelios-spark.config.yaml`, merges with the widget body,
    and boots the Pipecat pipeline.
 5. WebRTC voice loop runs. Agent calls tools by sending RTVI messages
    back to the widget; widget runs them via the registry and replies.

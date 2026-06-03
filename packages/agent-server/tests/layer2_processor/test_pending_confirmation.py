@@ -161,7 +161,7 @@ async def test_keep_waiting_speech_only_no_state_change(harness_with_tools):
             },
             {
                 "user_turn_status": "complete",
-                "speech": "Sure, my name is Voqi.",
+                "speech": "Sure, my name is AeliosSpark.",
                 "demonstration_action": "continue",
                 "demonstration_name": None,
                 "pending_batch_resolution": "keep_waiting",

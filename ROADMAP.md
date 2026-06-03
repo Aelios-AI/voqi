@@ -1,6 +1,6 @@
 # Roadmap
 
-Where Voqi is going next. Roughly ordered by impact, not by date — we
+Where Aelios Spark is going next. Roughly ordered by impact, not by date — we
 ship when a piece is ready, not on a calendar.
 
 - **Mobile UI.** Responsive widget chrome for small viewports plus a
@@ -9,7 +9,7 @@ ship when a piece is ready, not on a calendar.
   explicitly refuses to mount below 768px.
 
 - **Easy provider swaps.** STT / TTS / LLM choice driven from
-  `voqi.config.yaml` instead of editing `bot.py` and the two
+  `aelios-spark.config.yaml` instead of editing `bot.py` and the two
   LangChain call sites. One config block per session, hot-swappable
   across runs.
 
@@ -17,14 +17,14 @@ ship when a piece is ready, not on a calendar.
   VAD. Useful in noisy rooms, on tablets, and for users who want
   explicit control over when the mic is hot.
 
-- **Wake-word ("Hey Voqi").** Optional always-on listener so the
+- **Wake-word ("Hey Aelios Spark").** Optional always-on listener so the
   launcher click stops being mandatory. Picovoice Porcupine or similar,
   fully on-device.
 
 - **MCP support.** Let the agent consume tools from any
   [Model Context Protocol](https://modelcontextprotocol.io) server in
   addition to JS-defined tools. Drops the entire MCP ecosystem into
-  Voqi without the host page having to write tool defs by hand.
+  Aelios Spark without the host page having to write tool defs by hand.
 
 - **Sub-agents.** One main agent that can hand a turn off to a
   specialist (billing, support, search, anything you wire up). The

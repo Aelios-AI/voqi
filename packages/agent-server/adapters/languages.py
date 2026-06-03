@@ -5,10 +5,10 @@ twice: ``get_deepgram_stt_language`` picks the Deepgram Nova-3 enum so
 STT recognises the right language, and ``resolve_cartesia_voice_id``
 picks the Cartesia TTS voice so the agent's reply sounds native.
 
-Voqi supports 37 languages — the intersection of Deepgram Nova-3 (STT)
+AeliosSpark supports 37 languages — the intersection of Deepgram Nova-3 (STT)
 and Cartesia (TTS) coverage that we ship native Cartesia voices for.
 All bundled voices are FEMALE, so if you set ``agent.name`` in
-``voqi.config.yaml`` pick a feminine name; otherwise the spoken voice
+``aelios-spark.config.yaml`` pick a feminine name; otherwise the spoken voice
 and the persona name won't match. Operators who want a different
 gender / voice per language should supply Cartesia voice ids via the
 agent profile's ``voice_languages`` override, or replace entries in
@@ -123,7 +123,7 @@ def get_deepgram_stt_language(language_code: str) -> Language:
 # Cartesia TTS voice catalogue
 # ──────────────────────────────────────────────────────────────────────
 # Default voice id per language. All bundled voices are FEMALE — pair
-# ``agent.name`` in voqi.config.yaml with a feminine name, or override
+# ``agent.name`` in aelios-spark.config.yaml with a feminine name, or override
 # the voice via the agent profile's ``voice_languages`` to use a
 # different one. When ``voice_languages`` carries an entry for the
 # visitor's language, that wins; otherwise we fall back to this map.
@@ -183,7 +183,7 @@ def get_cartesia_tts_config(language: Language) -> str:
     voice = CARTESIA_TTS_VOICES.get(language)
     if not voice:
         logger.warning(
-            f"[voqi] No native Cartesia voice id for language={language}; "
+            f"[aelios-spark] No native Cartesia voice id for language={language}; "
             f"falling back to the English voice. Add a voice id to "
             f"adapters/languages.py or override via voice_languages."
         )

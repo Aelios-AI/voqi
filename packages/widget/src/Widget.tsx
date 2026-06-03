@@ -19,7 +19,7 @@ import type {
     InAppWidgetConfig,
 } from "./types";
 
-// Hardcoded language list — the full 37 entries Voqi supports. The
+// Hardcoded language list — the full 37 entries AeliosSpark supports. The
 // widget's UI is intentionally decoupled from whatever subset the
 // agent profile may declare: the visitor always sees the full menu
 // (fall-back voices + STT cover languages the agent profile doesn't
@@ -136,7 +136,7 @@ const ENDING_HINT_AUTO_CLEAR_MS = 10_000;
 const CONNECTING_TIMEOUT_MS = 6 * 60 * 1000;
 
 /**
- * Voqi spectrum glyph — 5-bar wave used as the idle/live/busy/responding
+ * AeliosSpark spectrum glyph — 5-bar wave used as the idle/live/busy/responding
  * indicator in the pill. The signature look that says "voice assistant".
  */
 function SpectrumGlyph({ size = 16 }: { size?: number }) {
@@ -437,7 +437,7 @@ export function Widget({
             })
             .catch((err) => {
                 if (!cancelled) {
-                    console.error("[Voqi] config fetch failed", err);
+                    console.error("[AeliosSpark] config fetch failed", err);
                     setConfigError(err instanceof Error ? err.message : String(err));
                     // Do NOT flip connectionPhase to "failed" here —
                     // the visitor hasn't clicked anything yet, so
@@ -526,11 +526,11 @@ export function Widget({
     // identical specificity.
     const themeCss = config?.themeColors
         ? `:host {
-            --voqi-primary: ${config.themeColors.primary};
-            --voqi-bg: ${config.themeColors.bg};
-            --voqi-text: ${config.themeColors.text};
-            --voqi-muted: ${config.themeColors.muted};
-            --voqi-on-primary: ${config.themeColors.onPrimary};
+            --aelios-spark-primary: ${config.themeColors.primary};
+            --aelios-spark-bg: ${config.themeColors.bg};
+            --aelios-spark-text: ${config.themeColors.text};
+            --aelios-spark-muted: ${config.themeColors.muted};
+            --aelios-spark-on-primary: ${config.themeColors.onPrimary};
         }`
         : "";
 
@@ -737,9 +737,9 @@ export function Widget({
             //      through". The pill copy + glyph differ accordingly.
             const message = err instanceof Error ? err.message : String(err);
             if (connectCancelledRef.current || message === "connect cancelled") {
-                console.info("[Voqi] connect cancelled by user");
+                console.info("[AeliosSpark] connect cancelled by user");
             } else {
-                console.error("[Voqi] failed to start session", err);
+                console.error("[AeliosSpark] failed to start session", err);
                 setAgentState("error");
                 setConnectionPhase("failed");
             }
@@ -849,7 +849,7 @@ export function Widget({
             try {
                 await transport.disconnect();
             } catch (err) {
-                console.warn("[Voqi] disconnect failed", err);
+                console.warn("[AeliosSpark] disconnect failed", err);
             }
         }
 

@@ -45,7 +45,7 @@ body:
   - type: dropdown
     id: component
     attributes:
-      label: Which part of Voqi is affected?
+      label: Which part of AeliosSpark is affected?
       options:
         - Widget (browser)
         - Agent server (Python)
@@ -58,7 +58,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Voqi commit / version
+      label: AeliosSpark commit / version
       description: Output of `git rev-parse --short HEAD` or the release
         tag you're on.
       placeholder: e.g. a1b2c3d

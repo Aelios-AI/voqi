@@ -8,33 +8,33 @@ import { ToolRegistry } from "./toolRegistry";
 import { Widget, type TransportFactory } from "./Widget";
 import { WIDGET_CSS } from "./styles";
 import type {
-    VoqiMountOptions,
-    Voqi,
-    VoqiToolDefinition,
-    VoqiUserConfig,
+    AeliosSparkMountOptions,
+    AeliosSpark,
+    AeliosSparkToolDefinition,
+    AeliosSparkUserConfig,
 } from "./types";
 
 /**
- * Entry point compiled into ``voqi-widget.js`` (IIFE). The host page
- * loads this script once. It registers ``window.Voqi``, drains any
- * callbacks queued in ``window.VoqiReady``, and auto-mounts unless
+ * Entry point compiled into ``aelios-spark-widget.js`` (IIFE). The host page
+ * loads this script once. It registers ``window.AeliosSpark``, drains any
+ * callbacks queued in ``window.AeliosSparkReady``, and auto-mounts unless
  * told otherwise.
  *
  * Wiring expected from the host:
  *
- *     <script src=".../voqi-widget.js"
+ *     <script src=".../aelios-spark-widget.js"
  *             data-agent-url="http://localhost:3002"></script>
  *     <script>
- *       Voqi.configure({
+ *       AeliosSpark.configure({
  *         agentUrl: "http://localhost:3002",
  *         branding: { position: "bottom-right" },
  *       });
- *       Voqi.defineTool({ name: "create_task", ... });
+ *       AeliosSpark.defineTool({ name: "create_task", ... });
  *     </script>
  *
  * The agent server enforces an Origin allowlist (the browser sends
  * Origin automatically), so there's no API key to coordinate — just
- * make sure your host page's origin is in ``VOQI_ALLOWED_ORIGINS`` on
+ * make sure your host page's origin is in ``AELIOS_SPARK_ALLOWED_ORIGINS`` on
  * the agent server.
  */
 
@@ -46,10 +46,10 @@ interface MountedState {
 
 const registry = new ToolRegistry();
 let mounted: MountedState | null = null;
-let userConfig: VoqiUserConfig | null = null;
-const ROOT_DATASET_KEY = "voqiHost";
+let userConfig: AeliosSparkUserConfig | null = null;
+const ROOT_DATASET_KEY = "aeliosSparkHost";
 
-// Voqi is desktop-only today (small touch viewports make the pill
+// AeliosSpark is desktop-only today (small touch viewports make the pill
 // useless and the cursor/screenshot model assumes a pointer device).
 // Anything narrower than this is treated as mobile: mount is skipped,
 // and a live session is torn down if the viewport shrinks past it.
@@ -60,17 +60,17 @@ const RESIZE_DEBOUNCE_MS = 200;
 
 // Remembered intent across viewport changes:
 // - ``wantedToMount`` is set whenever the consumer (auto-mount or a
-//   programmatic ``Voqi.mount(...)``) asked for a widget, regardless
+//   programmatic ``AeliosSpark.mount(...)``) asked for a widget, regardless
 //   of whether the mount actually proceeded. The resize handler uses
 //   this to know whether to re-mount on the desktop transition.
 // - ``lastMountOpts`` holds the most recent options so the re-mount
 //   is faithful to what was originally requested (mock mode, custom
 //   container, etc.).
-// - ``Voqi.unmount()`` clears ``wantedToMount`` (an explicit teardown
+// - ``AeliosSpark.unmount()`` clears ``wantedToMount`` (an explicit teardown
 //   stays torn down); the resize handler uses ``tearDownInternal()``
 //   which preserves the intent.
 let wantedToMount = false;
-let lastMountOpts: VoqiMountOptions = {};
+let lastMountOpts: AeliosSparkMountOptions = {};
 let resizeDebounce: ReturnType<typeof setTimeout> | null = null;
 
 function isMobileViewport(): boolean {
@@ -81,7 +81,7 @@ function isMobileViewport(): boolean {
 function findScriptTag(): HTMLScriptElement | null {
     const all = Array.from(
         document.querySelectorAll(
-            'script[data-agent-url], script[src*="voqi-widget"]',
+            'script[data-agent-url], script[src*="aelios-spark-widget"]',
         ),
     );
     if (all.length === 0) return null;
@@ -102,12 +102,12 @@ function resolveMockMode(
     return attr === "true" || attr === "1";
 }
 
-function configure(config: VoqiUserConfig): void {
+function configure(config: AeliosSparkUserConfig): void {
     userConfig = { ...userConfig, ...config };
 }
 
-function mount(opts: VoqiMountOptions = {}): void {
-    console.info("[Voqi] mount() called", { opts, alreadyMounted: !!mounted });
+function mount(opts: AeliosSparkMountOptions = {}): void {
+    console.info("[AeliosSpark] mount() called", { opts, alreadyMounted: !!mounted });
     // Record intent regardless of whether the mount proceeds — the
     // resize handler reads this to decide whether to bring the widget
     // back when the viewport returns to desktop size.
@@ -118,7 +118,7 @@ function mount(opts: VoqiMountOptions = {}): void {
 
     if (isMobileViewport()) {
         console.info(
-            `[Voqi] mobile viewport detected (<${MIN_DESKTOP_WIDTH_PX}px) — ` +
+            `[AeliosSpark] mobile viewport detected (<${MIN_DESKTOP_WIDTH_PX}px) — ` +
                 "widget will mount when the viewport reaches desktop size.",
         );
         return;
@@ -129,22 +129,22 @@ function mount(opts: VoqiMountOptions = {}): void {
     const agentUrl = mockMode ? "" : resolveAgentUrl(scriptTag);
     if (!mockMode && !agentUrl) {
         console.error(
-            "[Voqi] cannot mount widget without an agent URL. Set " +
+            "[AeliosSpark] cannot mount widget without an agent URL. Set " +
                 "data-agent-url on the script tag, or call " +
-                "Voqi.configure({ agentUrl: '...' }) before mount.",
+                "AeliosSpark.configure({ agentUrl: '...' }) before mount.",
         );
         return;
     }
 
-    const effectiveConfig: VoqiUserConfig = {
+    const effectiveConfig: AeliosSparkUserConfig = {
         ...(userConfig ?? { agentUrl }),
         agentUrl,
     };
 
     if (mockMode) {
         console.info(
-            "[Voqi] mock mode enabled — no agent server required. " +
-                "Manual control surface at window.__voqiMock.",
+            "[AeliosSpark] mock mode enabled — no agent server required. " +
+                "Manual control surface at window.__aeliosSparkMock.",
         );
     }
 
@@ -199,9 +199,9 @@ function mount(opts: VoqiMountOptions = {}): void {
     try {
         root.render(<WidgetHost />);
     } catch (err) {
-        console.error("[Voqi] React render threw", err);
+        console.error("[AeliosSpark] React render threw", err);
     }
-    console.info("[Voqi] mount() complete", {
+    console.info("[AeliosSpark] mount() complete", {
         container,
         hasShadow: !!container.shadowRoot,
         mockMode,
@@ -219,7 +219,7 @@ function tearDownInternal(): void {
     try {
         mounted.root.unmount();
     } catch (err) {
-        console.warn("[Voqi] unmount threw", err);
+        console.warn("[AeliosSpark] unmount threw", err);
     }
     if (mounted.container.dataset[ROOT_DATASET_KEY] === "1") {
         mounted.container.remove();
@@ -234,35 +234,35 @@ function unmount(): void {
     tearDownInternal();
 }
 
-const api: Voqi = {
+const api: AeliosSpark = {
     configure,
-    defineTool: (def: VoqiToolDefinition) => registry.define(def),
-    mount: (opts?: VoqiMountOptions) => mount(opts),
+    defineTool: (def: AeliosSparkToolDefinition) => registry.define(def),
+    mount: (opts?: AeliosSparkMountOptions) => mount(opts),
     unmount,
     open: () => mounted?.setOpen(true),
     close: () => mounted?.setOpen(false),
 };
 
 // Drain any callbacks the host queued before the script finished loading.
-const existingQueue = window.VoqiReady ?? [];
-window.Voqi = api;
-window.VoqiReady = {
-    push: (...fns: Array<(api: Voqi) => void>) => {
+const existingQueue = window.AeliosSparkReady ?? [];
+window.AeliosSpark = api;
+window.AeliosSparkReady = {
+    push: (...fns: Array<(api: AeliosSpark) => void>) => {
         for (const fn of fns) {
             try {
                 fn(api);
             } catch (err) {
-                console.error("[Voqi] queued init callback threw", err);
+                console.error("[AeliosSpark] queued init callback threw", err);
             }
         }
         return 0;
     },
-} as unknown as Array<(api: Voqi) => void>;
+} as unknown as Array<(api: AeliosSpark) => void>;
 for (const fn of existingQueue) {
     try {
         fn(api);
     } catch (err) {
-        console.error("[Voqi] queued init callback threw", err);
+        console.error("[AeliosSpark] queued init callback threw", err);
     }
 }
 
@@ -297,13 +297,13 @@ if (typeof window !== "undefined") {
             const mobile = isMobileViewport();
             if (mobile && mounted) {
                 console.info(
-                    "[Voqi] viewport shrank below desktop threshold — " +
+                    "[AeliosSpark] viewport shrank below desktop threshold — " +
                         "tearing down widget; will re-mount when desktop-sized.",
                 );
                 tearDownInternal();
             } else if (!mobile && !mounted && wantedToMount) {
                 console.info(
-                    "[Voqi] viewport returned to desktop size — re-mounting widget.",
+                    "[AeliosSpark] viewport returned to desktop size — re-mounting widget.",
                 );
                 mount(lastMountOpts);
             }

@@ -62,7 +62,7 @@ class CannedKey(str, Enum):
 
 
 # Keys are ISO language codes matching the frontend's SUPPORTED_LANGUAGES.
-# Currently covers 23 of voqi's 37 widget languages — the remaining 14
+# Currently covers 23 of aelios-spark's 37 widget languages — the remaining 14
 # (bg, hr, el, gu, he, hu, kn, mr, no, ro, sk, tl, ta, te) fall back to
 # English via the lookup at the bottom of this file. Translations are
 # idiomatic, not literal — short apologies in each language's natural

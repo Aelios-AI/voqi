@@ -10,7 +10,7 @@ call.
 ## Anatomy
 
 ```ts
-Voqi.defineTool({
+AeliosSpark.defineTool({
     name: "create_task",
     description:
         "Create a new task. Use when the user says 'create', 'add', " +
@@ -98,7 +98,7 @@ execution between tools in the same batch.
 ## Tools that need confirmation
 
 ```ts
-Voqi.defineTool({
+AeliosSpark.defineTool({
     name: "delete_task",
     description: "Permanently delete a task...",
     parameters: { /* ... */ },
@@ -136,6 +136,6 @@ a single tool call.
 ## Reading the example
 
 The richest concrete example lives in
-[`examples/tracker/src/voqi.ts`](../examples/tracker/src/voqi.ts).
+[`examples/tracker/src/aelios-spark.ts`](../examples/tracker/src/aelios-spark.ts).
 Read it end-to-end — 30+ tools spanning reads, writes, batches, and
 confirmations. Copy the patterns.

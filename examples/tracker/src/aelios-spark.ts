@@ -1,7 +1,7 @@
 /**
- * Example Tracker ↔ Voqi adapter.
+ * Example Tracker ↔ AeliosSpark adapter.
  *
- * Registers tool handlers against `window.VoqiReady` so the
+ * Registers tool handlers against `window.AeliosSparkReady` so the
  * agent can drive the Example Tracker store. Handlers accept human
  * identifiers (task code, member name, sprint name, label name) and
  * resolve them to store IDs internally — the agent never has to know
@@ -26,14 +26,14 @@ import type {
 
 declare global {
     interface Window {
-        VoqiReady?: Array<(api: VoqiApi) => void>;
+        AeliosSparkReady?: Array<(api: AeliosSparkApi) => void>;
         // Bridged by <NavBridge> in App.tsx so this module (which lives
         // outside React) can drive react-router programmatically.
         __trackerNavigate?: (path: string) => void;
     }
 }
 
-interface VoqiToolDef {
+interface AeliosSparkToolDef {
     name: string;
     description: string;
     parameters: Record<string, unknown>;
@@ -41,19 +41,19 @@ interface VoqiToolDef {
     requiresConfirmation?: boolean;
 }
 
-interface VoqiBranding {
+interface AeliosSparkBranding {
     position?: "bottom-right" | "bottom-left";
     themeColors?: Record<string, string>;
 }
 
-interface VoqiUserConfig {
+interface AeliosSparkUserConfig {
     agentUrl?: string;
-    branding?: VoqiBranding;
+    branding?: AeliosSparkBranding;
 }
 
-interface VoqiApi {
-    configure: (config: VoqiUserConfig) => void;
-    defineTool: (def: VoqiToolDef) => void;
+interface AeliosSparkApi {
+    configure: (config: AeliosSparkUserConfig) => void;
+    defineTool: (def: AeliosSparkToolDef) => void;
 }
 
 // ────────────────────────────────────────────────────────── resolvers
@@ -144,9 +144,9 @@ const SPRINT_STATUS_ENUM = ["planned", "active", "completed"] as const;
 
 // ────────────────────────────────────────────────────────── registration
 
-window.VoqiReady = window.VoqiReady || [];
-window.VoqiReady.push((Voqi) => {
-    Voqi.configure({
+window.AeliosSparkReady = window.AeliosSparkReady || [];
+window.AeliosSparkReady.push((AeliosSpark) => {
+    AeliosSpark.configure({
         agentUrl: "http://localhost:3002/start",
         branding: { position: "bottom-right" },
     });
@@ -166,7 +166,7 @@ window.VoqiReady.push((Voqi) => {
         settings: "/settings",
     };
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "navigate_to_page",
         description:
             "Move the visitor to a different page of the tracker. " +
@@ -212,7 +212,7 @@ window.VoqiReady.push((Voqi) => {
     });
 
     // ── Tasks: read-only ─────────────────────────────────────────────
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "list_tasks",
         description:
             "List tasks with optional filters. Use when the visitor asks 'what's open?', 'show me Alice's bugs', etc. " +
@@ -247,7 +247,7 @@ window.VoqiReady.push((Voqi) => {
         },
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "get_task",
         description:
             "Get full details for a single task by code (e.g. EX-12) or id. Pure read.",
@@ -263,7 +263,7 @@ window.VoqiReady.push((Voqi) => {
     });
 
     // ── Tasks: mutations ─────────────────────────────────────────────
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "create_task",
         description:
             "Create a new task. Title is required; everything else is optional. The new task appears in the list/board on save.",
@@ -307,7 +307,7 @@ window.VoqiReady.push((Voqi) => {
         },
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "update_task",
         description:
             "Update fields on an existing task. Only provided fields change. Use when the visitor wants to edit a single task.",
@@ -337,7 +337,7 @@ window.VoqiReady.push((Voqi) => {
         },
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "delete_task",
         description: "Permanently delete a task by code or id. Cannot be undone.",
         parameters: {
@@ -353,7 +353,7 @@ window.VoqiReady.push((Voqi) => {
         },
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "move_task",
         description:
             "Move a task to a new status. Use when the visitor says 'mark X as done', 'move to in progress', etc.",
@@ -373,7 +373,7 @@ window.VoqiReady.push((Voqi) => {
         },
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "set_task_priority",
         description: "Set a task's priority.",
         parameters: {
@@ -392,7 +392,7 @@ window.VoqiReady.push((Voqi) => {
         },
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "assign_task",
         description:
             "Assign a task to a member by name. Pass empty string or omit to unassign.",
@@ -413,7 +413,7 @@ window.VoqiReady.push((Voqi) => {
         },
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "set_task_due_date",
         description: "Set or clear a task's due date. Accepts ISO string; omit / empty to clear.",
         parameters: {
@@ -432,7 +432,7 @@ window.VoqiReady.push((Voqi) => {
         },
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "add_label_to_task",
         description: "Add a label to a task (label by name).",
         parameters: {
@@ -453,7 +453,7 @@ window.VoqiReady.push((Voqi) => {
         },
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "remove_label_from_task",
         description: "Remove a label from a task.",
         parameters: {
@@ -474,7 +474,7 @@ window.VoqiReady.push((Voqi) => {
         },
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "add_task_to_sprint",
         description:
             "Move a task into a sprint by sprint name. Pass empty string to remove from sprint.",
@@ -498,7 +498,7 @@ window.VoqiReady.push((Voqi) => {
     // ── Batch ────────────────────────────────────────────────────────
     // No getTarget on batch tools — they touch many rows; pointing at
     // a single one would be misleading.
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "batch_update_tasks",
         description: "Update status, priority, assignee, sprint, or due date on many tasks at once.",
         parameters: {
@@ -533,7 +533,7 @@ window.VoqiReady.push((Voqi) => {
         },
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "batch_delete_tasks",
         description: "Delete many tasks in one call. Cannot be undone.",
         parameters: {
@@ -554,7 +554,7 @@ window.VoqiReady.push((Voqi) => {
         },
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "batch_add_label",
         description: "Apply a label to many tasks at once.",
         parameters: {
@@ -574,7 +574,7 @@ window.VoqiReady.push((Voqi) => {
     });
 
     // ── Comments ─────────────────────────────────────────────────────
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "add_comment",
         description: "Post a comment on a task.",
         parameters: {
@@ -592,7 +592,7 @@ window.VoqiReady.push((Voqi) => {
         },
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "delete_comment",
         description: "Delete a comment by id. Cannot be undone.",
         parameters: {
@@ -607,14 +607,14 @@ window.VoqiReady.push((Voqi) => {
     });
 
     // ── Sprints ──────────────────────────────────────────────────────
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "list_sprints",
         description: "List all sprints with their status and date ranges. Pure read.",
         parameters: { type: "object", properties: {} },
         execute: async () => s().sprints,
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "create_sprint",
         description: "Create a new sprint.",
         parameters: {
@@ -636,7 +636,7 @@ window.VoqiReady.push((Voqi) => {
             }),
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "update_sprint",
         description: "Update a sprint's name, goal, or dates.",
         parameters: {
@@ -668,7 +668,7 @@ window.VoqiReady.push((Voqi) => {
         },
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "set_sprint_status",
         description: "Change a sprint's status.",
         parameters: {
@@ -686,7 +686,7 @@ window.VoqiReady.push((Voqi) => {
         },
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "delete_sprint",
         description: "Delete a sprint. Cannot be undone.",
         parameters: {
@@ -703,14 +703,14 @@ window.VoqiReady.push((Voqi) => {
     });
 
     // ── Members ──────────────────────────────────────────────────────
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "list_members",
         description: "List all team members with their role and capacity. Pure read.",
         parameters: { type: "object", properties: {} },
         execute: async () => s().members,
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "create_member",
         description: "Add a new team member.",
         parameters: {
@@ -732,7 +732,7 @@ window.VoqiReady.push((Voqi) => {
             }),
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "update_member",
         description: "Update a team member's name, role, email, or capacity.",
         parameters: {
@@ -758,7 +758,7 @@ window.VoqiReady.push((Voqi) => {
         },
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "archive_member",
         description: "Archive (remove from active roster) a team member by name. Cannot be undone from this UI.",
         parameters: {
@@ -775,14 +775,14 @@ window.VoqiReady.push((Voqi) => {
     });
 
     // ── Labels ───────────────────────────────────────────────────────
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "list_labels",
         description: "List all available labels. Pure read.",
         parameters: { type: "object", properties: {} },
         execute: async () => s().labels,
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "create_label",
         description: "Create a new label.",
         parameters: {
@@ -797,7 +797,7 @@ window.VoqiReady.push((Voqi) => {
             s().createLabel(String(args.name), args.color ? String(args.color) : undefined),
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "delete_label",
         description: "Delete a label by name or id. Cannot be undone.",
         parameters: {
@@ -814,7 +814,7 @@ window.VoqiReady.push((Voqi) => {
     });
 
     // ── UI helpers ───────────────────────────────────────────────────
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "open_task_drawer",
         description:
             "Open the side drawer showing a task's full detail. Useful when the visitor says 'show me EX-12' or 'open it up'.",

@@ -1,10 +1,10 @@
-# Example Tracker — Voqi sample integration
+# Example Tracker — Aelios Spark sample integration
 
-A standalone, frontend-only project-management workspace that the Voqi
+A standalone, frontend-only project-management workspace that the Aelios Spark
 widget drives end-to-end. Every name, task, and email address is
-fictional. Use this as the reference for integrating Voqi into your
-own app — the tool definitions in [`src/voqi.ts`](src/voqi.ts) and
-the embed script in [`src/embedVoqiWidget.ts`](src/embedVoqiWidget.ts)
+fictional. Use this as the reference for integrating Aelios Spark into your
+own app — the tool definitions in [`src/aelios-spark.ts`](src/aelios-spark.ts) and
+the embed script in [`src/embedAeliosSparkWidget.ts`](src/embedAeliosSparkWidget.ts)
 are designed to be copy-pasted as a starting point.
 
 ## Run it locally
@@ -39,8 +39,8 @@ and try voice commands like:
 
 | Path | What it does |
 |---|---|
-| [`src/voqi.ts`](src/voqi.ts) | All tool definitions registered with `Voqi.defineTool(...)`. Each tool reads/writes the in-memory Zustand store. Read this to see how a real integration looks. |
-| [`src/embedVoqiWidget.ts`](src/embedVoqiWidget.ts) | Injects the widget `<script>` tag at runtime. Points to a local agent URL by default. |
+| [`src/aelios-spark.ts`](src/aelios-spark.ts) | All tool definitions registered with `AeliosSpark.defineTool(...)`. Each tool reads/writes the in-memory Zustand store. Read this to see how a real integration looks. |
+| [`src/embedAeliosSparkWidget.ts`](src/embedAeliosSparkWidget.ts) | Injects the widget `<script>` tag at runtime. Points to a local agent URL by default. |
 | [`src/store/`](src/store) | Zustand store backing the workspace. Hard reload re-seeds from scratch — no persistence. |
 | [`src/api/`](src/api) | `window.example.*` programmatic surface — alternative to voice for E2E tests. |
 | [`src/pages/`](src/pages) | The UI itself (board, list, sprint, settings, etc.). |
@@ -48,14 +48,14 @@ and try voice commands like:
 ## How tool registration works
 
 ```ts
-window.VoqiReady = window.VoqiReady || [];
-window.VoqiReady.push((Voqi) => {
-    Voqi.configure({
+window.AeliosSparkReady = window.AeliosSparkReady || [];
+window.AeliosSparkReady.push((AeliosSpark) => {
+    AeliosSpark.configure({
         agentUrl: "http://localhost:3002/start",
         branding: { position: "bottom-right" },
     });
 
-    Voqi.defineTool({
+    AeliosSpark.defineTool({
         name: "create_task",
         description: "Create a new task. Used when the user says 'create' or 'add'…",
         parameters: {

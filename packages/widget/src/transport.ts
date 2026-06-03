@@ -155,7 +155,7 @@ export class InAppTransport implements IInAppTransport {
 
     async connect(session: InAppSessionStart): Promise<void> {
         if (this.client) {
-            console.warn("[Voqi] transport already connected — skipping");
+            console.warn("[AeliosSpark] transport already connected — skipping");
             return;
         }
 
@@ -475,7 +475,7 @@ export class InAppTransport implements IInAppTransport {
                     this.pollAbortController = null;
                     if (this.endRequested) throw err;
                     console.log(
-                        "[Voqi] voice agent unavailable, retrying...",
+                        "[AeliosSpark] voice agent unavailable, retrying...",
                         err,
                     );
                     // Sleep that wakes early on disconnect so we don't
@@ -524,7 +524,7 @@ export class InAppTransport implements IInAppTransport {
         try {
             this.client?.enableMic(!muted);
         } catch (err) {
-            console.warn("[Voqi] failed to toggle mic", err);
+            console.warn("[AeliosSpark] failed to toggle mic", err);
         }
     }
 
@@ -547,7 +547,7 @@ export class InAppTransport implements IInAppTransport {
             // so we have nowhere to show it. The text travels straight
             // to the backend and the agent's reply is what surfaces.
         } catch (err) {
-            console.warn("[Voqi] failed to send text message", err);
+            console.warn("[AeliosSpark] failed to send text message", err);
         }
     }
 
@@ -585,7 +585,7 @@ export class InAppTransport implements IInAppTransport {
         try {
             await client.disconnect();
         } catch (err) {
-            console.warn("[Voqi] disconnect threw", err);
+            console.warn("[AeliosSpark] disconnect threw", err);
         }
     }
 
@@ -595,7 +595,7 @@ export class InAppTransport implements IInAppTransport {
      * first so we never end up with overlapping heartbeats.
      */
     private startHeartbeat(): void {
-        console.log("[Voqi] startHeartbeat() interval starting");
+        console.log("[AeliosSpark] startHeartbeat() interval starting");
         this.stopHeartbeat();
         let beat = 0;
         this.heartbeatTimer = setInterval(() => {
@@ -604,14 +604,14 @@ export class InAppTransport implements IInAppTransport {
                 sendClientRequest?: (type: string, data: unknown) => unknown;
             } | null;
             if (!client?.sendClientRequest) {
-                console.warn(`[Voqi] heartbeat #${beat}: no client/sendClientRequest`);
+                console.warn(`[AeliosSpark] heartbeat #${beat}: no client/sendClientRequest`);
                 return;
             }
             try {
                 client.sendClientRequest("heartbeat", { from: "client" });
-                console.log(`[Voqi] → heartbeat #${beat} sent`);
+                console.log(`[AeliosSpark] → heartbeat #${beat} sent`);
             } catch (err) {
-                console.warn(`[Voqi] → heartbeat #${beat} threw`, err);
+                console.warn(`[AeliosSpark] → heartbeat #${beat} threw`, err);
             }
         }, 3000);
     }
@@ -655,7 +655,7 @@ export class InAppTransport implements IInAppTransport {
                 });
             }
         } catch (err) {
-            console.warn("[Voqi] failed to send screenshot response", err);
+            console.warn("[AeliosSpark] failed to send screenshot response", err);
         }
     }
 
@@ -672,7 +672,7 @@ export class InAppTransport implements IInAppTransport {
                 sendClientRequest?: (type: string, data: unknown) => unknown;
             }).sendClientRequest?.(result.type, { ...result, from: "client" });
         } catch (err) {
-            console.warn("[Voqi] failed to send tool result", err);
+            console.warn("[AeliosSpark] failed to send tool result", err);
         }
     }
 

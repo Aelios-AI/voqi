@@ -3,13 +3,13 @@ import type {
     InAppSessionStart,
     InAppWidgetConfig,
     InAppWidgetTool,
-    VoqiUserConfig,
+    AeliosSparkUserConfig,
 } from "./types";
 
 /**
  * Local-only API shim — replaces the HTTP control plane the managed
- * Voqi product uses with values the host page supplies via
- * ``Voqi.configure({...})``. Nothing here makes a network call.
+ * AeliosSpark product uses with values the host page supplies via
+ * ``AeliosSpark.configure({...})``. Nothing here makes a network call.
  *
  * The widget code is written against this small interface, so the
  * mock client (mockApi.ts) and the local client (this file) are both
@@ -34,7 +34,7 @@ function mintUuid(): string {
 }
 
 export class LocalInAppApi implements IInAppApi {
-    constructor(private readonly config: VoqiUserConfig) {}
+    constructor(private readonly config: AeliosSparkUserConfig) {}
 
     async getConfig(): Promise<InAppWidgetConfig> {
         const branding = this.config.branding ?? {};
@@ -53,7 +53,7 @@ export class LocalInAppApi implements IInAppApi {
     }): Promise<InAppSessionStart> {
         return {
             sessionUuid: mintUuid(),
-            inAppAgentUuid: "voqi-local",
+            inAppAgentUuid: "aelios-spark-local",
             token: { token: "", expiresIn: 60 * 60 * 2 },
             // OSS-only: the agent server reads these directly out of the
             // /start body — there is no control plane to fetch them from.

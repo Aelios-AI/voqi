@@ -1,12 +1,12 @@
-"""Voqi agent server — a minimal FastAPI host for the Pipecat voice agent.
+"""AeliosSpark agent server — a minimal FastAPI host for the Pipecat voice agent.
 
 The widget POSTs to ``/start`` with a session id and the host-app's tool
 schema; this server provisions a Daily WebRTC room and kicks off the
 agent loop in-process. Auth is purely origin-based — set
-``VOQI_ALLOWED_ORIGINS`` to your host domains and the browser will
+``AELIOS_SPARK_ALLOWED_ORIGINS`` to your host domains and the browser will
 refuse to talk to this server from anywhere else. No JWTs, no DB, no
 control-plane HTTP. All agent configuration (prompt, persona, knowledge
-base) comes from ``voqi.config.yaml`` on this machine.
+base) comes from ``aelios-spark.config.yaml`` on this machine.
 
 For production (autoscale, multi-tenant, hosted control plane), see
 the managed Aelios AI offering at https://aeliosai.com.
@@ -91,7 +91,7 @@ MAXIMUM_SESSION_DURATION_MINUTES = int(
 # set this explicitly in production.
 ALLOWED_ORIGINS = [
     o.strip()
-    for o in os.getenv("VOQI_ALLOWED_ORIGINS", "*").split(",")
+    for o in os.getenv("AELIOS_SPARK_ALLOWED_ORIGINS", "*").split(",")
     if o.strip()
 ]
 
@@ -118,7 +118,7 @@ def create_server_app() -> FastAPI:
 
     @app.post("/start")
     async def start_agent(request: Request):
-        """Start a Voqi voice session.
+        """Start a AeliosSpark voice session.
 
         Expected POST body::
 
@@ -222,7 +222,7 @@ def create_server_app() -> FastAPI:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Voqi agent server")
+    parser = argparse.ArgumentParser(description="AeliosSpark agent server")
     parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int, default=3002)
     parser.add_argument("--verbose", "-v", action="count", default=0)
@@ -230,7 +230,7 @@ def main():
     args = parser.parse_args()
 
     print()
-    print("🎙️  Voqi agent server ready!")
+    print("🎙️  AeliosSpark agent server ready!")
     print(f"   → POST http://{args.host}:{args.port}/start to begin a session")
     print(f"   → Allowed origins: {', '.join(ALLOWED_ORIGINS)}")
     print()
