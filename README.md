@@ -2,7 +2,7 @@
 
 **Make any web app voice-controllable in 37 languages in 5 minutes.**
 
-<video src="https://github.com/user-attachments/assets/e537db27-76d6-42bb-a2a9-b528993adca6" controls poster="docs/assets/launch.jpg" width="100%"></video>
+<video src="https://github.com/user-attachments/assets/a4093ff9-3278-4263-a00a-2946180e8a99" controls poster="docs/assets/launch.jpg" width="100%"></video>
 
 Aelios Spark is an open-source voice control layer for web apps. Drop in a
 widget, define a few tools, and your users can operate your software
