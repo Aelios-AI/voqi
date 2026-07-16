@@ -25,7 +25,7 @@ export function Dashboard() {
         <>
             <div className="page-h">
                 <div>
-                    <h1>Welcome back, {me?.name.split(" ")[0]}</h1>
+                    <h1>Welcome, {me?.name.split(" ")[0]}</h1>
                     <p>Here's what's happening across your workspace today.</p>
                 </div>
             </div>
